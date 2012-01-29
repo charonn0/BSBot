@@ -24,6 +24,7 @@ Protected Module BuiltIns
 		  #pragma Unused trigger
 		  If IsAuthorizedUser(caller) Then
 		    If data.Ubound = 1 Then
+		      If data(1) = "BSBotScriptRuntime" Or data(1) = "BSBotExecutive" Then Return "This user cannot be promoted."
 		      If IsAuthorizedUser(data(1)) Then Return data(1) + " is already authorized."
 		      Dim tos As TextOutputStream
 		      tos = tos.Append(App.ExecutableFile.Parent.Child("authUsers.conf"))
@@ -54,6 +55,7 @@ Protected Module BuiltIns
 		Function Deauthorize(trigger As String, caller As String, data() As String) As String
 		  #pragma Unused trigger
 		  If IsAuthorizedUser(caller) Then
+		    If data(1) = "BSBotScriptRuntime" Or data(1) = "BSBotExecutive" Then Return "This user cannot be demoted."
 		    If data.Ubound = 1 Then
 		      If IsOwner(caller) And IsOwner(data(1)) Then Return "You must have shell access to demote an owner."
 		      If IsOwner(data(1)) Then Return data(1) + " outranks you."
@@ -141,6 +143,8 @@ Protected Module BuiltIns
 		  #pragma Unused data
 		  #pragma Unused trigger
 		  If IsAuthorizedUser(caller) Then
+		    ScriptRunner = Nil
+		    
 		    Dim plcount As Integer = loadScripts
 		    Dim i As Integer
 		    For x As Integer = 0 To scripts.Count - 1
@@ -159,8 +163,8 @@ Protected Module BuiltIns
 
 
 	#tag Note, Name = Adding Builtin Triggers
-		Built-in triggers are script triggers which are hard-coded into the program. They are loaded before
-		external scripts are and take precedence in trigger assignment (i.e. an external script can't
+		Built-in triggers are script triggers which are hard-coded into the program (though they can be reassigned.)
+		They are loaded before external scripts are and take precedence in trigger assignment (i.e. an external script can't
 		declare a trigger which is used for a BuiltIn.)
 		
 		BuiltIn triggers, when triggered, will invoke the BuiltInTrigger delegate assigned to that trigger. This
@@ -183,7 +187,7 @@ Protected Module BuiltIns
 		        data(4) = "test!"
 		
 		
-		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See Globals.loadBuiltinTriggers6
+		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See Globals.loadBuiltinTriggers
 		
 		
 	#tag EndNote

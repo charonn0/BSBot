@@ -7,6 +7,7 @@ Inherits TCPSocket
 		  App.isConnected = True
 		  Handshake()
 		  preParseOutput("/join " + gChannel)
+		  //Autoinvoke.Now()
 		End Sub
 	#tag EndEvent
 
@@ -14,6 +15,55 @@ Inherits TCPSocket
 		Sub DataAvailable()
 		  //Read all available data and send to ParseInput for processing.
 		  ParseInput(ReadAll)
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub Error()
+		  Select Case Me.LastErrorCode
+		  Case 100
+		    OutPutFatal("Socket Error: Could not access networking API!")
+		    Quit(5)
+		  Case 101
+		    OutPutFatal("Socket Error: #101. This should be impossible, but here we are...")
+		    Quit(5)
+		  Case 102
+		    If manualDisconnect Then Return
+		    OutPutWarning("The remote connection was lost!")
+		    OutPutWarning("Reconnect now? (type 'y' or 'n' and press enter)")
+		    If Input() = "y" Then
+		      App.reconnect
+		    Else
+		      OutPutFatal("Quitting...")
+		      Quit(5)
+		    End If
+		  Case 103
+		    OutPutWarning("The configured domain name or IP address could not be resolved!")
+		    OutPutWarning("Please enter a new domain name or IP address and press Enter:")
+		    Globals.gServer = Input()
+		    If Globals.gServer <> "" Then
+		      App.reconnect
+		    Else
+		      OutPutFatal("Invalid input!")
+		      OutPutFatal("Quitting...")
+		      Quit(5)
+		    End If
+		  Case 104
+		    OutPutFatal("Socket Error: #101. This should be impossible, but here we are...")
+		    Quit(5)
+		  Case 105
+		    OutPutFatal("Address in use! WTF? If you see this message, report it.")
+		    OutPutFatal("Quitting...")
+		    Quit(5)
+		  Case 106
+		    OutPutFatal("The socket is in an invalid state and cannot be used.")
+		    OutPutFatal("Quitting")
+		    Quit(5)
+		  Else
+		    OutPutFatal("Socket Error #" + Str(Me.LastErrorCode))
+		    OutPutFatal("Quitting...")
+		    Quit(5)
+		  End Select
 		End Sub
 	#tag EndEvent
 
@@ -31,7 +81,7 @@ Inherits TCPSocket
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub CTCPReply(CTCP() As String, Nick As String)
+		Private Sub CTCPReply(CTCP() As String, cNick As String)
 		  Dim i As Integer
 		  Dim d as Date = New Date
 		  
@@ -42,33 +92,33 @@ Inherits TCPSocket
 		  For i = 0 to UBound(CTCP)
 		    Select Case CTCP(i)
 		    Case "FINGER" //FINGER - User's Full Name + Idle time...
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + cUserName + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP FINGER from " + NthField(Nick, "!", 1),4)
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + cUserName + Chr(1) + EndOfLine
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP FINGER from " + NthField(cNick, "!", 1))
 		    Case "VERSION" //VERSION - Client info
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + "BSBot Version " + Str(Version) + " (http://www.boredomsoft.org/bsbot.bs)"_
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "BSBot Version " + Str(Version) + " (http://www.boredomsoft.org/bsbot.bs)"_
 		      + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP VERSION from " + NthField(Nick, "!", 1),4)
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP VERSION from " + NthField(cNick, "!", 1))
 		    Case "SOURCE" //SOURCE - where to get a copy
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + _
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + _
 		      "SOURCE http://www.boredomsoft.org/bsbot.bs" + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP SOURCE from " + NthField(Nick, "!", 1),4)
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP SOURCE from " + NthField(cNick, "!", 1))
 		    Case "USERINFO" //USERINFO - A string set by the user...
 		      
 		    Case "CLIENTINFO" //CLIENTINFO - Index of what client knows
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + "CLIENTINFO :" +_
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "CLIENTINFO :" +_
 		      "The following CTCP commands are supported - SOURCE FINGER VERSION ERRMSG PING TIME"_
 		      + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP CLIENTINFO from " + NthField(Nick, "!", 1),4)
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP CLIENTINFO from " + NthField(cNick, "!", 1))
 		    Case "ERRMSG" //ERRMSG - reply to errors
 		      
 		    Case "PING" //PING - Measure net lag
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + CTCP(i) + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP PING from " + NthField(Nick, "!", 1),4)
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + CTCP(i) + Chr(1) + EndOfLine
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP PING from " + NthField(cNick, "!", 1))
 		      
 		    Case "TIME" //TIME - local time
-		      Write "NOTICE " + NthField(Nick, "!", 1) + " :" + Chr(1) + "TIME :" + _
+		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "TIME :" + _
 		      d.LongDate + " " + d.LongTime + Chr(1) + EndOfLine
-		      PrintConsole(NthField(Nick, "!", 1)+" Received CTCP TIME from " + NthField(Nick, "!", 1),4)
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP TIME from " + NthField(cNick, "!", 1))
 		    End Select
 		  Next
 		End Sub
@@ -87,6 +137,7 @@ Inherits TCPSocket
 		  //Returns True if a script handled the message successfully. False if further handling is needed.
 		  
 		  Dim commandNick As String = NthField(prefix, "!", 1)
+		  If commandNick = "BSBotScriptRuntime" Or commandNick = "BSBotExecutive" Then Return False
 		  Dim command As String = ConvertEncoding(NthField(msg, " ", 1).Trim, Encodings.UTF16)
 		  Dim args() As String = Replace(msg, command, "").Trim.Split
 		  If command = "" Or Left(msg, 1) <> "!" Then  //not a command
@@ -138,9 +189,9 @@ Inherits TCPSocket
 		  //Note: cUserName & cNick must be set prior to connecting or this will fail...
 		  
 		  Write "USER " + cNick + " 0 * " + cUserName + EndOfLine
-		  Write "NICK " + cNick + EndOfLine
+		  Write "NICK " + Globals.gNick + EndOfLine
 		  If sPassword <> "" Then
-		    Write("PRIVMSG nickserv :identify  " + sPassword + EndOfLine)
+		    Write("PRIVMSG " + gNickServ + " :identify  " + sPassword + EndOfLine)
 		  End If
 		  
 		  cChannel = sAddress
@@ -149,19 +200,6 @@ Inherits TCPSocket
 
 	#tag Method, Flags = &h21
 		Private Sub ParseInput(input as string)
-		  ping = 0
-		  If Instr(input, "KICK " + Globals.gChannel + " " + Globals.gNick) <> 0 Then
-		    OutPutWarning("Bot was kicked!")
-		    If Globals.gAutorejoin Then
-		      OutPutInfo("Rejoining...")
-		      App.reconnect()
-		      Return
-		    Else
-		      OutPutFatal("Bot was kicked and autorejoin is off!")
-		      OutPutFatal("Quitting...")
-		      Quit(1)
-		    End If
-		  End If
 		  Dim sReply() As String = Split(ReplaceLineEndings(input, EndOfLine), EndOfLine)
 		  Dim i As Integer
 		  Dim command, msg As String
@@ -327,463 +365,466 @@ Inherits TCPSocket
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "002" //Your host is...
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "003" //Server created on...
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "004" //Server info...
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "005" //Either server redirect info or depending on the ircd it could be a bunch of mode info
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "302" //RPL_USERHOST
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "303" //RPL_ISON
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "301" //User away msg
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Away: " + msg ,2)
+		    OutputInfo("Away: " + msg)
 		  Case "305" //RPL_UNAWAY ":You are no longer marked as being away"
-		    PrintConsole("Your are no longer marked as being away.", 2)
+		    OutputInfo("Your are no longer marked as being away.")
 		  Case "306" //RPL_NOWAWAY ":You have been marked as being away"
-		    PrintConsole("You are marked as being away.", 2)
+		    OutputInfo("You are marked as being away.")
 		  Case "311" //RPL_WHOISUSER <nick> <user> <host> * :<real name>
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "312" //RPL_WHOISSERVER "<nick> <server> :<server info>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "313" //RPL_WHOISOPERATOR "<nick> :is an IRC operator"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "317" //RPL_WHOISIDLE "<nick> <integer> :seconds idle"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "318" //RPL_ENDOFWHOIS "<nick> :End of WHOIS list"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "319" //RPL_WHOISCHANNELS "<nick> :*( ( "@" / "+" ) <channel> " " )"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "314" //RPL_WHOWASUSER "<nick> <user> <host> * :<real name>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "369" //RPL_ENDOFWHOWAS "<nick> :End of WHOWAS"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "321" //RPL_LISTSTART Obsolete. Not used.
-		    PrintConsole(sReply, 2) //just print it for compatiblity...
+		    OutputInfo(sReply) //just print it for compatiblity...
 		  Case "322" //RPL_LIST "<channel> <# visible> :<topic>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "323" //RPL_LISTEND ":End of LIST"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "325" //RPL_UNIQOPIS "<channel> <nickname>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "324" //RPL_CHANNELMODEIS "<channel> <mode> <mode params>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Mode for channel " + msg ,2)
+		    OutputInfo("Mode for channel " + msg)
 		  Case "331" //RPL_NOTOPIC "<channel> :No topic is set"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Topic for channel " + msg ,2)
+		    OutputInfo("Topic for channel " + msg)
 		  Case "332" //RPL_TOPIC "<channel> :<topic>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Topic for channel " + msg ,2)
+		    OutputInfo("Topic for channel " + msg)
 		  Case "341" //RPL_INVITING "<channel> <nick>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "342" //RPL_SUMMONING "<user> :Summoning user to IRC"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "346" //RPL_INVITELIST "<channel> <invitemask>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "347" //RPL_ENDOFINVITELIST "<channel> :End of channel invite list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "348" //RPL_EXCEPTLIST "<channel> <exceptionmask>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "349" //RPL_ENDOFEXCEPTLIST "<channel> :End of channel exception list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "351" //RPL_VERSION "<version>.<debuglevel> <server> :<comments>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "352" //RPL_WHOREPLY "<channel> <user> <host> <server> <nick> ( "H" / "G" > ["*"] [ ( "@" / "+" ) ] :<hopcount> <real name>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "315" //RPL_ENDOFWHO "<name> :End of WHO list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "353" //RPL_NAMREPLY "( "=" / "*" / "@" ) <channel> :[ "@" / "+" ] <nick> *( " " [ "@" / "+" ] <nick> )
 		    params = NthField(sReply," ", 5) //Channel
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + Len(NthField(sReply," ",4)) + Len(NthField(sReply," ",5)) + 5 )
 		    msg = Trim(sReply.Right(n)) //Names
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		    
 		  Case "366" //RPL_ENDOFNAMES "<channel> :End of NAMES list"
 		    params = NthField(sReply," ", 4) //Channel
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		    
 		  Case "364" //RPL_LINKS "<mask> <server> :<hopcount> <server info>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "365" //RPL_ENDOFLINKS "<mask> :End of LINKS list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "367" //RPL_BANLIST "<channel> <banmask>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "368" //RPL_ENDOFBANLIST "<channel> :End of channel ban list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "371" //RPL_INFO ":<string>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "374" //RPL_ENDOFINFO ":End of INFO list"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "375" //RPL_MOTDSTART ":- <server> Message of the day - "
+		    MOTD = True
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "372" //RPL_MOTD ":- <text>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
-		    PrintConsole(msg, 2)
+		    OutputInfo(msg)
 		  Case "376" //RPL_ENDOFMOTD ":End of MOTD command"
-		    PrintConsole("/End of MOTD", 2)
+		    OutputInfo("/End of MOTD")
+		    MOTD = False
 		  Case "381" //RPL_YOUREOPER ":You are now an IRC operator"
-		    PrintConsole("You are now an IRC operator." ,2)
+		    OutPutInfo(Globals.gNick + " is now a channel operator.")
 		  Case "382" //RPL_REHASHING "<config file> :Rehashing"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "383" //RPL_YOURESERVICE "You are service <servicename>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "391" //RPL_TIME "<server> :<string showing server's local time>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Local time for server " + msg ,2)
+		    OutputInfo("Local time for server " + msg)
 		  Case "392" //RPL_USERSSTART ":UserID   Terminal  Host"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "393" //RPL_USERS ":<username> <ttyline> <hostname>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "394" //RPL_ENDOFUSERS ":End of users"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "395" //RPL_NOUSERS ":Nobody logged in"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "200" //RPL_TRACELINK "Link <version & debug level> <destination> <next server> V<protocol version> <link uptime in seconds> <backstream sendq> <upstream sendq>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "201" //RPL_TRACECONNECTING "Try. <class> <server>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "202" //RPL_TRACEHANDSHAKE "H.S. <class> <server>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "203" //RPL_TRACEUNKNOWN "???? <class> [<client IP address in dot form>]"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "204" //RPL_TRACEOPERATOR "Oper <class> <nick>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "205" //RPL_TRACEUSER "User <class> <nick>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "206" //RPL_TRACESERVER "Serv <class> <int>S <int>C <server> <nick!user|*!*>@<host|server> V<protocol version>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "207" //RPL_TRACESERVICE "Service <class> <name> <type> <active type>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "208" //RPL_TRACENEWTYPE "<newtype> 0 <client name>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "209" //RPL_TRACECLASS "Class <class> <count>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "210" //RPL_TRACERECONNECT Unused.
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "261" //RPL_TRACELOG "File <logfile> <debug level>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "262" //RPL_TRACEEND "<server name> <version & debug level> :End of TRACE"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "211" //RPL_STATSLINKINFO "<linkname> <sendq> <sent messages> <sent Kbytes> <received messages> <received Kbytes> <time open>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "212" //RPL_STATSCOMMANDS "<command> <count> <byte count> <remote count>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "219" //RPL_ENDOFSTATS "<stats letter> :End of STATS report"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "242" //RPL_STATSUPTIME ":Server Up %d days %d:%02d:%02d"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Server Up Time: " + msg ,2)
+		    OutputInfo("Server Up Time: " + msg)
 		  Case "243" //RPL_STATSOLINE "O <hostmask> * <name>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "221" //RPL_UMODEIS "<user mode string>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("User mode set to " + msg ,2)
+		    OutputInfo("User mode set to " + msg)
 		  Case "234" //RPL_SERVLIST "<name> <server> <mask> <type> <hopcount> <info>"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "235" //RPL_SERVLISTEND "<mask> <type> :End of service listing"
-		    PrintConsole(sReply, 2)
+		    OutputInfo(sReply)
 		  Case "251" //RPL_LUSERCLIENT ":There are <integer> users and <integer> services on <integer> servers"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "252" //RPL_LUSEROP "<integer> :operator(s) online"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "253" //RPL_LUSERUNKNOWN "<integer> :unknown connection(s)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "254" //RPL_LUSERCHANNELS "<integer> :channels formed"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "255" //RPL_LUSERME ":I have <integer> clients and <integer> servers"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "256" //RPL_ADMINME "<server> :Administrative info"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "257" //RPL_ADMINLOC1 ":<admin info>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Admin " + msg ,2)
+		    OutputInfo("Admin " + msg)
 		  Case "258" //RPL_ADMINLOC2 ":<admin info>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Admin " + msg ,2)
+		    OutputInfo("Admin " + msg)
 		  Case "259" //RPL_ADMINEMAIL ":<admin info>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole("Admin " + msg ,2)
+		    OutputInfo("Admin " + msg)
 		  Case "263" //Try again later, server busy
-		    PrintConsole("Server is to busy, try again later.", 2)
+		    OutPutWarning("The server at " + Globals.gServer + " is too busy and refused the connection!")
 		  Case "401" //ERR_NOSUCHNICK "<nickname> :No such nick/channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "402" //ERR_NOSUCHSERVER "<server name> :No such server"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutPutWarning("Channel: " + Globals.gChannel + " does not exist!")
+		    //OutputInfo(msg)
 		  Case "403" //ERR_NOSUCHCHANNEL "<channel name> :No such channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "404" //ERR_CANNOTSENDTOCHAN "<channel name> :Cannot send to channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "405" //ERR_TOOMANYCHANNELS "<channel name> :You have joined too many channels"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "406" //ERR_WASNOSUCHNICK "<nickname> :There was no such nickname"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "407" //ERR_TOOMANYTARGETS "<target> :<error code> recipients. <abort message>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "408" //ERR_NOSUCHSERVICE "<service name> :No such service"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "409" //ERR_NOORIGIN ":No origin specified"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "411" //ERR_NORECIPIENT ":No recipient given (<command>)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "412" //ERR_NOTEXTTOSEND ":No text to send"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutPutWarning("Fuck! Something's wrong! Restart and try again. (No text to send!)")
+		    OutPutInfo("Yes. I said 'fuck.'")
 		  Case "413" //ERR_NOTOPLEVEL "<mask> :No toplevel domain specified"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "414" //ERR_WILDTOPLEVEL "<mask> :Wildcard in toplevel domain"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "415" //ERR_BADMASK "<mask> :Bad Server/host mask"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "421" //ERR_UNKNOWNCOMMAND "<command> :Unknown command"
+		    'Break
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "422" //ERR_NOMOTD ":MOTD File is missing"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "423" //ERR_NOADMININFO "<server> :No administrative info available"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "424" //ERR_FILEERROR ":File error doing <file op> on <file>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "431" //ERR_NONICKNAMEGIVEN ":No nickname given"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "432" //ERR_ERRONEUSNICKNAME "<nick> :Erroneous nickname"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "433" //ERR_NICKNAMEINUSE "<nick> :Nickname is already in use"
-		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
-		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    Globals.NickInUse()
 		  Case "436" //ERR_NICKCOLLISION "<nick> :Nickname collision KILL from <user>@<host>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "437" //ERR_UNAVAILRESOURCE "<nick/channel> :Nick/channel is temporarily unavailable"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "441" //ERR_USERNOTINCHANNEL "<nick> <channel> :They aren't on that channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "442" //ERR_NOTONCHANNEL "<channel> :You're not on that channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "443" //ERR_USERONCHANNEL "<user> <channel> :is already on channel"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "444" //ERR_NOLOGIN "<user> :User not logged in"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "445" //ERR_SUMMONDISABLED ":SUMMON has been disabled"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "446" //ERR_USERSDISABLED ":USERS has been disabled"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "451" //ERR_NOTREGISTERED ":You have not registered"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "461" //ERR_NEEDMOREPARAMS "<command> :Not enough parameters"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "462" //ERR_ALREADYREGISTRED ":Unauthorized command (already registered)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "463" //ERR_NOPERMFORHOST ":Your host isn't among the privileged"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "464" //ERR_PASSWDMISMATCH ":Password incorrect"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "465" //ERR_YOUREBANNEDCREEP ":You are banned from this server"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "466" //ERR_YOUWILLBEBANNED
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "467" //ERR_KEYSET "<channel> :Channel key already set"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "471" //ERR_CHANNELISFULL "<channel> :Cannot join channel (+l)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "472" //ERR_UNKNOWNMODE "<char> :is unknown mode char to me for <channel>"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "473" //ERR_INVITEONLYCHAN "<channel> :Cannot join channel (+i)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "474" //ERR_BANNEDFROMCHAN "<channel> :Cannot join channel (+b)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "475" //ERR_BADCHANNELKEY "<channel> :Cannot join channel (+k)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "476" //ERR_BADCHANMASK "<channel> :Bad Channel Mask"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "477" //ERR_NOCHANMODES "<channel> :Channel doesn't support modes"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "478" //ERR_BANLISTFULL "<channel> <char> :Channel list is full"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "481" //ERR_NOPRIVILEGES ":Permission Denied- You're not an IRC operator"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "482" //ERR_CHANOPRIVSNEEDED "<channel> :You're not channel operator"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "483" //ERR_CANTKILLSERVER ":You can't kill a server!"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "484" //ERR_RESTRICTED ":Your connection is restricted!"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "485" //ERR_UNIQOPPRIVSNEEDED ":You're not the original channel operator"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "491" //ERR_NOOPERHOST ":No O-lines for your host"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "501" //ERR_UMODEUNKNOWNFLAG ":Unknown MODE flag"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		  Case "502" //ERR_USERSDONTMATCH ":Cannot change mode for other users"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
-		    PrintConsole(msg ,2)
+		    OutputInfo(msg)
 		    //END NUMERIC REPLIES
 		  Case "JOIN"
 		    prefix = Trim(NthField(sReply, " ", 1)) //joining user
@@ -795,7 +836,8 @@ Inherits TCPSocket
 		      cChannel = params
 		    end if
 		    
-		    PrintConsole(NthField(prefix,"!",1) + " (" + NthField(prefix,"!",2) + ") has joined " + params, 2)
+		    OutputInfo(NthField(prefix,"!",1) + " (" + NthField(prefix,"!",2) + ") has joined " + params)
+		    If NthField(prefix,"!",1) = Globals.gNick Then Autoinvoke.Now()
 		  Case "MODE" //mode changes
 		    prefix = Trim(NthField(sReply, " ", 1)) //the origin
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
@@ -805,9 +847,9 @@ Inherits TCPSocket
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
 		    If params.Left(1) = "#" then //channel mode
-		      PrintConsole(NthField(prefix,"!",1) + " sets mode " + msg + " " + params, 2)
+		      OutputInfo(NthField(prefix,"!",1) + " sets mode " + msg + " " + params)
 		    else //user mode
-		      PrintConsole(NthField(prefix,"!",1) + " sets mode " + msg + " " + params, 2)
+		      OutputInfo(NthField(prefix,"!",1) + " sets mode " + msg + " " + params)
 		    end if
 		  Case "NICK" //changed/new nicks
 		    prefix = Trim(NthField(sReply, " ", 1)) //user
@@ -816,7 +858,7 @@ Inherits TCPSocket
 		    if params.Left(1) = ":" then params = params.Right(Len(params)-1)
 		    
 		    if prefix = cNick then cNick = params
-		    PrintConsole(NthField(prefix,"!",1) + " is now known as " + params, 2)
+		    OutputInfo(NthField(prefix,"!",1) + " is now known as " + params)
 		  Case "QUIT" //Someone's client quit
 		    prefix = Trim(NthField(sReply, " ", 1)) //user
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
@@ -824,7 +866,7 @@ Inherits TCPSocket
 		    msg = Trim(sReply.Right(n)) //quit msg
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
-		    PrintConsole(NthField(prefix, "!", 1) + " has quit (" + msg + ")", 2)
+		    OutputInfo(NthField(prefix, "!", 1) + " has quit (" + msg + ")")
 		  Case "PART" //Someone's leaving
 		    prefix = Trim(NthField(sReply, " ", 1)) //parting user
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
@@ -834,7 +876,7 @@ Inherits TCPSocket
 		    msg = Trim(sReply.Right(n)) //optional msg
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
-		    PrintConsole(NthField(prefix,"!",1) + " has left " + params, 2)
+		    OutputInfo(NthField(prefix,"!",1) + " has left " + params)
 		    
 		  Case "TOPIC" //Someone set or changed the channel topic
 		    prefix = Trim(NthField(sReply, " ", 1)) //User
@@ -845,7 +887,7 @@ Inherits TCPSocket
 		    msg = Trim(sReply.Right(n)) //topic
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
-		    PrintConsole(NthField(prefix,"!",1) + " sets channel topic: " + msg + " " + params, 2)
+		    OutputInfo(NthField(prefix,"!",1) + " sets channel topic: " + msg + " " + params)
 		    
 		  Case "INVITE" //We are invited to a channel
 		    prefix = Trim(NthField(sReply, " ", 1)) //User
@@ -855,7 +897,7 @@ Inherits TCPSocket
 		    msg = Trim(NthField(sReply, " ", 4)) //channel
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
-		    PrintConsole(NthField(prefix,"!",1) + " has invited " + params + " to channel " + msg, 2)
+		    OutputInfo(NthField(prefix,"!",1) + " has invited " + params + " to channel " + msg)
 		  Case "KICK" //someone has been kicked off the chanel
 		    prefix = Trim(NthField(sReply, " ", 1)) //User
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
@@ -866,8 +908,22 @@ Inherits TCPSocket
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n)) //optional reason
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
+		    If params2 = Globals.gNick Then
+		      OutPutWarning("Bot was kicked by: " + NthField(prefix,"!",1))
+		      If gAutorejoin Then
+		        OutPutInfo("Rejoining...")
+		        manualDisconnect = True
+		        App.reconnect()
+		        Return
+		      Else
+		        OutPutFatal("Bot was kicked and autorejoin is off!")
+		        OutPutFatal("Quitting...")
+		        Quit(3)
+		      End If
+		    Else
+		      OutputInfo(NthField(prefix,"!",1) + " has kicked " + params2 + " from channel " + params + " :" + msg)
+		    End If
 		    
-		    PrintConsole(NthField(prefix,"!",1) + " has kicked " + params2 + " from channel " + params + " :" + msg, 2)
 		  Case "PRIVMSG" //Client to channel or to user messages
 		    prefix = Trim(NthField(sReply, " ", 1)) //User
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
@@ -899,9 +955,9 @@ Inherits TCPSocket
 		    If customCommand(msg, prefix, priv) Then Return
 		    
 		    if params.Left(1) = "#" then //to the channel
-		      PrintConsole(NthField(prefix, "!", 1) + " " + msg , 3)
+		      OutputInfo(NthField(prefix, "!", 1) + " " + msg)
 		    else //its to our nick, otherwise we should not have recieved the msg
-		      PrintConsole(NthField(prefix, "!", 1) + " " + msg , 4)
+		      OutputInfo(NthField(prefix, "!", 1) + " " + msg)
 		    end if
 		    privmsgdone:
 		  Case "NOTICE" //Client to channel or to user messages
@@ -914,7 +970,7 @@ Inherits TCPSocket
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
 		    
 		    if params.Left(1) = "#" then //to the channel
-		      PrintConsole(NthField(prefix, "!", 1) + " " + msg , 2)
+		      OutputInfo(NthField(prefix, "!", 1) + " " + msg)
 		    else //its to our nick, otherwise we should not have recieved the msg
 		      //will put something diff here when it comes time to style the text and finish the GUI
 		      If InStr(msg, "TIME ") > 0 Then
@@ -923,7 +979,7 @@ Inherits TCPSocket
 		      Else
 		        Dim priv As Boolean = Not (params = Globals.gChannel)
 		        If Not customCommand(msg, prefix, priv) Then
-		          PrintConsole(NthField(prefix, "!", 1) + " Private Msg: " + msg , 2)
+		          OutputInfo(NthField(prefix, "!", 1) + " Private Msg: " + msg)
 		        End If
 		      End If
 		    end if
@@ -991,6 +1047,10 @@ Inherits TCPSocket
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
+		MOTD As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		sAddress As String
 	#tag EndProperty
 
@@ -1041,6 +1101,11 @@ Inherits TCPSocket
 			Group="Position"
 			Type="Integer"
 			InheritedFrom="TCPSocket"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MOTD"
+			Group="Behavior"
+			Type="Boolean"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
