@@ -144,16 +144,10 @@ Protected Module BuiltIns
 		  #pragma Unused trigger
 		  If IsAuthorizedUser(caller) Then
 		    ScriptRunner = Nil
-		    
 		    Dim plcount As Integer = loadScripts
-		    Dim i As Integer
-		    For x As Integer = 0 To scripts.Count - 1
-		      Dim p As Script = Scripts.Value(Scripts.Key(x))
-		      If p.Hidden Then Continue
-		      i = i + 1
-		    Next
-		    OutPutInfo(Str(plcount) + " scripts loaded; " + Str(plcount - i) + " builtins; " + Str(i) + " external.")
-		    Return Str(i) + " scripts loaded"
+		    OutPutInfo(Str(plcount + BuiltIncount) + " scripts loaded; " + Str(BuiltIncount) + " builtins; " + Str(Scripts.Count) + _
+		    " external; " + Str(failedCount) + " not loaded.")
+		    Return Str(plcount) + " scripts loaded"
 		  Else
 		    OutPutWarning("User '" + Caller + "' denied access to !reload command")
 		    Return "Access Denied."
