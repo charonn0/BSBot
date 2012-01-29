@@ -5,6 +5,10 @@ Inherits ConsoleApplication
 		Function Run(args() as String) As Integer
 		  Call Console.SetTitle("BSBot " + Str(Version))
 		  dataflow = New Mutex("dataflow")
+		  Log("BS Bot " + Str(Version))
+		  Log("Copyright (c)2011 Boredom Software")
+		  Log("http://www.boredomsoft.org")
+		  Log("------------------------------------")
 		  Dim old As UInt16 = SetConsoleTextColor(Console.TEXT_GREEN)
 		  Stdout.Write("BS Bot ")
 		  stdout.Write(Str(Version) + EndOfLine)
@@ -15,35 +19,24 @@ Inherits ConsoleApplication
 		  If args.Ubound > 0 Then
 		    ParseArgs(args)
 		  End If
-		  If Bootstrap() Then
-		    roIRC = New roIRCSocket
+		  If Bootstrap() And ghalt < 2 Then
+		    bsIrc = New bsIrcSocket
 		    connect(gServer, gPort, gNick, gPassword)
 		    While True  //Sleep, Poll, Repeat
-		      Static timot As Integer
-		      If dataflow.TryEnter Then
-		        #If TargetLinux Then
-		          Soft Declare Function usleep Lib "libc" (seconds As UInt32) as UInt32
-		          Call uSleep(1000)
-		        #elseIf TargetWin32 Then
-		          Soft Declare Sub Sleep Lib "Kernel32" (millisecs As Integer)
-		          Sleep(1000)
-		          //FIXME: This doesn't work in Linux? o.O
-		          If Not roirc.IsConnected Then
-		            If timot > 10 Then
-		              OutPutFatal("The server did not respond in a timely manner.")
-		              OutPutFatal("Quitting...")
-		              Quit(6)
-		            End If
-		            timot = timot + 1
-		          End If
-		        #endif
-		        dataflow.Leave
-		        roIRC.Poll
-		      End If
+		      DoEvents
 		    Wend
 		  Else
-		    Quit(1)
+		    Halt(1)
 		  End If
+		  
+		  
+		Exception err As EndException
+		  If bsIrc <> Nil Then
+		    bsIrc.Write("/quit") // BSBot " + Str(Version))
+		    bsIrc.Disconnect
+		    bsIrc.Close
+		  End If
+		  Raise err
 		End Function
 	#tag EndEvent
 
@@ -54,7 +47,7 @@ Inherits ConsoleApplication
 		    OutPutFatal("A script has failed the sanity check but we are not in Check Mode.")
 		    OutPutFatal("Memory has likely been corrupted!")
 		    OutPutFatal("Quitting...")
-		    Quit(7)
+		    Halt(7)
 		  Else
 		    Dim err() As String = Error.CleanStack
 		    OutPutFatal("An unhandled exception has occurred!")
@@ -62,7 +55,7 @@ Inherits ConsoleApplication
 		      Print("   " + err(i))
 		    Next
 		    OutPutFatal("Quitting...")
-		    Quit(2)
+		    Halt(2)
 		  End Select
 		End Function
 	#tag EndEvent
@@ -86,44 +79,44 @@ Inherits ConsoleApplication
 		    Stdout.Write("Bootstrap failed!")
 		    Call SetConsoleTextColor(Console.OldSetting)
 		    Call SetConsoleTextColor(Console.TEXT_RED)
-		    stdout.Write(" Unable to continue. Refer to the above warnings")
+		    stdout.Write(" Unable to continue. Refer to the above warnings" + EndOfLine)
 		    Call SetConsoleTextColor(Console.OldSetting)
+		    Log("Bootstrap failed!")
+		    Log("Refer to above warnings.")
 		    Return False
 		  End Select
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub connect(server As String, port As Integer, user As String, password As String = "")
+		Sub connect(server As String, port As Integer, user As String, password As String)
 		  if LoadWarningLevel = 2 Then Return
 		  If isConnected Then
-		    roIRC.Close
+		    bsIrc.Close
 		    isConnected = False
 		  End If
 		  OutPutInfo("Connecting to server '" + gServer + "' on port " + Str(gPort))
-		  roirc = New roIRCSocket
-		  roirc.Address = server
-		  roirc.Port = port
-		  roirc.cNick = user
+		  bsIrc = New bsIrcSocket
+		  bsIrc.Address = server
+		  bsIrc.Port = port
+		  bsIrc.cNick = user
 		  OutPutInfo("   Using nickname: " + user)
-		  roirc.cUserName = roirc.cNick
-		  If password <> "" Then
-		    roIRC.sPassword = password
+		  bsIrc.cUserName = bsIrc.cNick
+		  If gpassword <> "" Then
 		    OutPutInfo("   Using supplied password")
 		  Else
-		    roIRC.sPassword = ""
 		    OutPutInfo("   Using no password")
 		  End If
 		  manualDisconnect = False
-		  roirc.Connect
+		  bsIrc.Connect
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub disconnect()
-		  If roIRC <> Nil And isConnected Then
-		    roirc.Disconnect
-		    roIRC.Close
+		  If bsIrc <> Nil And isConnected Then
+		    bsIrc.Disconnect
+		    bsIrc.Close
 		    manualDisconnect = True
 		  End If
 		End Sub
@@ -131,20 +124,22 @@ Inherits ConsoleApplication
 
 	#tag Method, Flags = &h21
 		Private Sub loadConfFiles()
-		  OutPutInfo("Loading bot.conf...")
 		  If gConfFile = Nil Then
 		    gConfFile = App.ExecutableFile.Parent.Child("bot.conf")
 		  End If
 		  If gConfFile.Exists Then
+		    OutPutInfo("Loading bot.conf...")
 		    Dim tis As TextInputStream
 		    tis = tis.Open(gConfFile)
 		    Dim lines() As String = Split(tis.ReadAll, EndOfLine.Windows)
 		    For Each line As String In lines
 		      Select Case NthField(line, "=", 1)
 		      Case "server"
+		        If gServer <> "" Then Continue
 		        gServer = NthField(line, "=", 2)
 		        OutPutInfo("   Server: " + gServer)
 		      Case "port"
+		        If gPort <> 0 Then Continue
 		        gPort = Val(NthField(line, "=", 2))
 		        OutPutInfo("   Port: " + Str(gPort))
 		      Case "reassign"
@@ -155,23 +150,39 @@ Inherits ConsoleApplication
 		        news = news.ConvertEncoding(Encodings.UTF16)
 		        If Reassignments = Nil Then Reassignments = New Dictionary
 		        Reassignments.Value(old) = news
-		        OutPutInfo("Trigger " + old + " reassigned to " + news)
+		        OutPutInfo("   Trigger " + old + " reassigned to " + news)
+		      Case "Blacklist"
+		        Dim trigger As String = NthField(line, "=", 2)
+		        trigger = trigger.ConvertEncoding(Encodings.UTF16)
+		        If BlackList = Nil Then BlackList = New Dictionary
+		        BlackList.Value(trigger) = 1
+		        OutPutInfo("Trigger " + trigger + " blacklisted!")
 		      Case "nick"
+		        If gNick <> "" Then Continue
 		        gNick = NthField(line, "=", 2)
 		        OutPutInfo("   Nickname: " + gNick)
 		      Case "password"
+		        If gPassword <> "" Then Continue
 		        gPassword = NthField(line, "=", 2)
 		        OutPutInfo("   Password: " + gPassword)
 		      Case "channel"
+		        If gChannel <> "" Then Continue
 		        gChannel = NthField(line, "=", 2)
 		        OutPutInfo("   Channel: " + gChannel)
+		      Case "SyncUsers"
+		        If SyncUsers Then Continue
+		        If NthField(line, "=", 2).Trim = "True" Then SyncUsers = True
 		      Case "owner"
+		        If gOwner <> "" Then Continue
 		        gOwner = NthField(line, "=", 2)
 		        OutPutInfo("   Owner: " + gOwner)
 		      Case "MaxCallDepth"
 		        gMaxScriptDepth = Val(NthField(line, "=", 2).Trim)
 		        OutPutInfo("   MaxCallDepth: " + Str(gMaxScriptDepth))
+		      Case "ThrottleGS"
+		        If NthField(line, "=", 2).Trim = "false" Then ThrottleGS = False
 		      Case "scripts"
+		        If gPlugDirectory <> Nil Then Continue
 		        Dim d As FolderItem = GetFolderItem(NthField(line, "=", 2))
 		        If d <> Nil Then
 		          If d.AbsolutePath <> App.ExecutableFile.Parent.AbsolutePath Then
@@ -188,6 +199,7 @@ Inherits ConsoleApplication
 		          LoadWarningLevel = 1
 		        End If
 		      Case "autorejoin"
+		        If gAutorejoin Then Continue
 		        If Val(NthField(line, "=", 2)) = 1 Then
 		          gAutorejoin = True
 		          OutPutInfo("   Autorejoin: On")
@@ -196,6 +208,7 @@ Inherits ConsoleApplication
 		          OutPutInfo("   Autorejoin: Off")
 		        End If
 		      Case "logfile"
+		        If gLogfile <> Nil Then Continue
 		        gLogfile = GetFolderItem(NthField(line, "=", 2))
 		        If gLogfile.AbsolutePath = App.ExecutableFile.AbsolutePath Then
 		          gLogfile = Nil
@@ -205,6 +218,7 @@ Inherits ConsoleApplication
 		          OutPutInfo("   Logfile: " + gLogfile.AbsolutePath)
 		        End If
 		      Case "Nickserv"
+		        If gNickServ <> "" Then Continue
 		        gNickServ = NthField(line, "=", 2)
 		      Else
 		        If Left(line, 2) <> "//" And line.Trim <> "" Then
@@ -214,11 +228,35 @@ Inherits ConsoleApplication
 		      End Select
 		    Next
 		  Else
-		    OutPutFatal("Configuration file is missing!")
-		    Print("       Configuration file expected to be at:")
-		    Print("       " + App.ExecutableFile.Parent.Child("bot.conf").AbsolutePath)
-		    LoadWarningLevel = 2
+		    If ghalt < 2 Then
+		      OutPutFatal("Configuration file is missing!")
+		      Print("       Configuration file expected to be at:")
+		      Print("       " + App.ExecutableFile.Parent.Child("bot.conf").AbsolutePath)
+		      LoadWarningLevel = 2
+		    Else
+		      OutPutInfo("No valid bot.conf file was found.")
+		    End If
 		  End If
+		  
+		  If OwnOverride = Nil Then
+		    Dim f As FolderItem = App.ExecutableFile.Parent.Child("authUsers.conf")
+		    If f <> Nil Then
+		      OwnOverride = f
+		      OutPutInfo("Using " + OwnOverride.AbsolutePath + " as owners file.")
+		    End If
+		  End If
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
 		  
 		End Sub
 	#tag EndMethod
@@ -241,7 +279,131 @@ Inherits ConsoleApplication
 		    Case "--debug"
 		      DebugMode = True
 		      OutPutInfo("Debug mode selected.")
-		    Case "--conf"
+		    Case "--server"
+		      If UBound(args) > i Then
+		        gServer = args(i + 1)
+		        OutPutInfo("Using " + gServer + " as IRCServer")
+		        i = i + 1
+		      Else
+		        OutPutWarning("--server was passed but no server was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--port"
+		      If UBound(args) > i Then
+		        Dim s As String = args(i + 1)
+		        If IsNumeric(s) Then
+		          gPort = Val(s)
+		          OutPutInfo("Using " + s + " as port number")
+		        Else
+		          OutPutWarning("--port expects a number between 1 and 65534")
+		          LoadWarningLevel = 1
+		        End If
+		        i = i + 1
+		      Else
+		        OutPutWarning("--port was passed but no port number was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--nick"
+		      If UBound(args) > i Then
+		        gNick = args(i + 1)
+		        OutPutInfo("Using " + gNick + " as bot nick")
+		        i = i + 1
+		      Else
+		        OutPutWarning("--nick was passed but no nickname was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--password"
+		      If UBound(args) > i Then
+		        gPassword = args(i + 1)
+		        Dim s As String = "*****"
+		        s = Left(gPassword, 1) + s
+		        OutPutInfo("Using " + s + " as password")
+		        i = i + 1
+		      Else
+		        OutPutWarning("--password was passed but no password was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--log"
+		      If UBound(args) > i Then
+		        Dim d As FolderItem = GetFolderItem(args(i + 1))
+		        If d.Directory Then
+		          OutPutWarning("--log was passed but pointed to a directory.")
+		          LoadWarningLevel = 1
+		        ElseIf d.AbsolutePath = App.ExecutableFile.AbsolutePath Then
+		          OutPutWarning("--log was passed but pointed to nothing")
+		          LoadWarningLevel = 1
+		        Else
+		          OutPutInfo("Using " + d.AbsolutePath + " as log file.")
+		          gLogfile = d
+		          i = i + 1
+		        End If
+		      Else
+		        OutPutFatal("--auth was passed but no authUsers file was specified.")
+		        LoadWarningLevel = 2
+		        Return
+		      End If
+		    Case "--auth"
+		      If UBound(args) > i Then
+		        AuthOverride = GetFolderItem(args(i + 1))
+		        If AuthOverride.Directory Then 
+		          OutPutWarning("--auth was passed but pointed to a directory.")
+		          LoadWarningLevel = 1
+		        ElseIf Not AuthOverride.Exists Then
+		          OutPutWarning("--auth was passed but pointed to a nonexistent file.")
+		          LoadWarningLevel = 1
+		        ElseIf AuthOverride.AbsolutePath = App.ExecutableFile.AbsolutePath Then
+		          OutPutWarning("--auth was passed but pointed to nothing")
+		          LoadWarningLevel = 1
+		        Else
+		          OutPutInfo("Using " + AuthOverride.AbsolutePath + " as authUsers file.")
+		          i = i + 1
+		        End If
+		      Else
+		        OutPutFatal("--auth was passed but no authUsers file was specified.")
+		        LoadWarningLevel = 2
+		        Return
+		      End If
+		    Case "--channel"
+		      If UBound(args) > i Then
+		        gChannel = args(i + 1)
+		        OutPutInfo("Using " + gChannel + " as Channel")
+		        i = i + 1
+		      Else
+		        OutPutWarning("--channel was passed but no channel was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--own"
+		      If UBound(args) > i Then
+		        gOwner = args(i + 1)
+		        OutPutInfo("Using " + gOwner + " as owner")
+		        i = i + 1
+		      Else
+		        OutPutWarning("--own was passed but no owner was specified.")
+		        LoadWarningLevel = 1
+		      End If
+		    Case "--owners"
+		      If UBound(args) > i Then
+		        Dim d As FolderItem = GetFolderItem(args(i + 1))
+		        If d.Directory Then
+		          OutPutWarning("--owners was passed but pointed to a directory.")
+		          LoadWarningLevel = 1
+		        ElseIf Not d.Exists Then
+		          OutPutWarning("--owners was passed but pointed to a nonexistent file.")
+		          LoadWarningLevel = 1
+		        ElseIf d.AbsolutePath = App.ExecutableFile.AbsolutePath Then
+		          OutPutWarning("--owners was passed but pointed to nothing")
+		          LoadWarningLevel = 1
+		        Else
+		          OwnOverride = d
+		          OutPutInfo("Using " + OwnOverride.AbsolutePath + " as owners file.")
+		          i = i + 1
+		        End If
+		      Else
+		        OutPutFatal("--owners was passed but no owners file was specified.")
+		        LoadWarningLevel = 2
+		        Return
+		      End If
+		    Case "--config"
 		      If UBound(args) > i Then
 		        gConfFile = GetFolderItem(args(i + 1))
 		        If gConfFile.AbsolutePath = App.ExecutableFile.AbsolutePath Or Not gConfFile.Exists Or gConfFile.Directory Then
@@ -255,13 +417,38 @@ Inherits ConsoleApplication
 		          i = i + 1
 		        End If
 		      Else
-		        OutPutFatal("The --config argument was passed but no configuration file was specified.")
+		        OutPutFatal("--config was passed but no configuration file was specified.")
 		        LoadWarningLevel = 2
 		        Return
 		      End If
 		    Case "--motd"
 		      Globals.gMOTD = True
 		      OutPutInfo("MOTD Supression Off")
+		    Case "--halt"
+		      OutPutInfo("Will Halt on fatal error")
+		      ghalt = 1
+		    Case "--check"
+		      OutPutInfo("Script Check Only Mode")
+		      ghalt = 2
+		    Case "--scripts"
+		      If UBound(args) > i Then
+		        Dim d As FolderItem = GetFolderItem(args(i + 1))
+		        If d <> Nil Then
+		          If d.Directory Then
+		            gPlugDirectory = d
+		            OutPutInfo("Using " + gPlugDirectory.AbsolutePath + " as scripts directory.")
+		            i = i + 1
+		          Else
+		            OutPutWarning("--scripts was passed but pointed to a file.")
+		            LoadWarningLevel = 1
+		          End If
+		        Else
+		          OutPutWarning("--scripts was passed but no scripts directory was specified.")
+		          LoadWarningLevel = 1
+		        End If
+		      Else
+		        OutPutWarning("--scripts was passed but no scripts directory was specified.")
+		      End If
 		    Else
 		      OutPutWarning("Invalid argument: " + args(i))
 		      If LoadWarningLevel < 2 Then LoadWarningLevel = 1
@@ -281,12 +468,19 @@ Inherits ConsoleApplication
 
 	#tag Method, Flags = &h21
 		Private Sub Validate()
-		  Dim f As FolderItem = App.ExecutableFile.Parent.Child("authUsers.conf")
-		  If Not f.Exists Then
-		    OutPutWarning("authUsers.conf file is missing!")
-		    Print("       authUsers.conf file expected to be at:")
-		    Print("       " + f.AbsolutePath)
-		    If LoadWarningLevel <= 1 Then LoadWarningLevel = 1
+		  If ghalt = 2 Then Return
+		  
+		  If AuthOverride = Nil Then
+		    Dim f As FolderItem = App.ExecutableFile.Parent.Child("authUsers.conf")
+		    If f = Nil Then
+		      OutPutInfo("No authUsers.conf file. Some features disabled.")
+		    Else
+		      If f.Exists Then
+		        AuthOverride = f
+		      Else
+		        OutPutInfo("No authUsers.conf file. Some features disabled.")
+		      End If
+		    End If
 		  End If
 		  
 		  If gServer = "" Then
@@ -318,11 +512,11 @@ Inherits ConsoleApplication
 
 
 	#tag Property, Flags = &h0
-		isConnected As Boolean
+		bsIrc As bsIrcSocket
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		roirc As roIRCSocket
+		isConnected As Boolean
 	#tag EndProperty
 
 
