@@ -174,7 +174,9 @@ Inherits TCPSocket
 		      Return True
 		    Else
 		      //Call the BuiltInTrigger for the script
-		      preParseOutput(p.builtIn.Invoke(command, commandNick, args))
+		      If command = "!on" Or command = "!off" Or BotState Then
+		        preParseOutput(p.builtIn.Invoke(command, commandNick, args))
+		      End If
 		      Return True
 		    End If
 		  End If
@@ -886,6 +888,10 @@ Inherits TCPSocket
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n)) //the mode flag
 		    if msg.Left(1) = ":" then msg = msg.Right(Len(msg)-1)
+		    
+		    Dim foo As New ScriptContext
+		    Globals.ReloadNames(foo)
+		    WaitingScripts.Remove("Nick")
 		    
 		    If params.Left(1) = "#" then //channel mode
 		      OutputInfo(NthField(prefix,"!",1) + " sets mode " + msg + " " + params)

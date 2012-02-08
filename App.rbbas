@@ -239,10 +239,12 @@ Inherits ConsoleApplication
 		  End If
 		  
 		  If OwnOverride = Nil Then
-		    Dim f As FolderItem = App.ExecutableFile.Parent.Child("authUsers.conf")
+		    Dim f As FolderItem = App.ExecutableFile.Parent.Child("owners.conf")
 		    If f <> Nil Then
-		      OwnOverride = f
-		      OutPutInfo("Using " + OwnOverride.AbsolutePath + " as owners file.")
+		      If f.Exists Then
+		        OwnOverride = f
+		        OutPutInfo("Using " + OwnOverride.AbsolutePath + " as owners file.")
+		      End If
 		    End If
 		  End If
 		  
