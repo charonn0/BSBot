@@ -1,5 +1,5 @@
 Type=Console
-RBProjectVersion=2011.041
+RBProjectVersion=2011.043
 MinIDEVersion=20070100
 Class=App;App.rbbas;&h710D67FF;&h0;false
 BuildSteps=Build Automation;Build Automation.rbbas;&h2127FFF;&h0;false
@@ -44,7 +44,7 @@ MDICaption=
 DefaultEncoding=&h0
 AppIcon=BSBot.rbres;&h0
 OSXBundleID=
-DebuggerCommandLine=
+DebuggerCommandLine=--debug
 UseGDIPlus=False
 UseBuildsFolder=True
 IsWebProject=False

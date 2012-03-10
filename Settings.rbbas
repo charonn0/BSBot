@@ -61,6 +61,10 @@ Protected Module Settings
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
+		Interactive As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		OwnOverride As FolderItem
 	#tag EndProperty
 
@@ -144,6 +148,11 @@ Protected Module Settings
 			Group="ID"
 			InitialValue="-2147483648"
 			InheritedFrom="Object"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Interactive"
+			Group="Behavior"
+			Type="Boolean"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"

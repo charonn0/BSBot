@@ -30,21 +30,32 @@ Inherits TCPSocket
 		  Case 102
 		    If manualDisconnect Then Return
 		    OutPutWarning("The remote connection was lost!")
-		    OutputAttention("Reconnect now? (type 'y' or 'n' and press enter)")
-		    If Input() = "y" Then
-		      App.reconnect
+		    OutPutInfo("Reconnecting...")
+		    If Interactive Then
+		      OutputAttention("Reconnect now? (type 'y' or 'n' and press enter)")
+		      If Input() = "y" Then
+		        App.reconnect
+		      Else
+		        OutPutFatal("Quitting...")
+		        Halt(5)
+		      End If
 		    Else
-		      OutPutFatal("Quitting...")
-		      Halt(5)
+		      App.reconnect
 		    End If
 		  Case 103
 		    OutPutWarning("The configured domain name or IP address could not be resolved!")
-		    OutputAttention("Please enter a new domain name or IP address and press Enter:")
-		    Globals.gServer = Input()
-		    If Globals.gServer <> "" Then
-		      App.reconnect
+		    OutPutFatal("No valid server is configured.")
+		    If Interactive Then
+		      OutputAttention("Please enter a new domain name or IP address and press Enter:")
+		      Globals.gServer = Input()
+		      If Globals.gServer <> "" Then
+		        App.reconnect
+		      Else
+		        OutPutFatal("Invalid input!")
+		        OutPutFatal("Quitting...")
+		        Halt(5)
+		      End If
 		    Else
-		      OutPutFatal("Invalid input!")
 		      OutPutFatal("Quitting...")
 		      Halt(5)
 		    End If
@@ -363,6 +374,7 @@ Inherits TCPSocket
 		  Dim n as Integer
 		  sReply = ReplaceLineEndings(sReply, EndOfLine.Windows)
 		  command = NthField(sReply, " ", 2)
+		  LastNumericCode = Val(command)
 		  Select Case command
 		  Case "001" //Welcome...
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
@@ -841,6 +853,8 @@ Inherits TCPSocket
 		    msg = Trim(sReply.Right(n))
 		    OutputInfo(msg)
 		  Case "482" //ERR_CHANOPRIVSNEEDED "<channel> :You're not channel operator"
+		    Globals.LastError = 2
+		    ScriptRequest = False
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    OutputInfo(msg)
@@ -877,8 +891,9 @@ Inherits TCPSocket
 		    
 		    if NthField(prefix, "!", 1) = cNick then
 		      cChannel = params
+		      Settings.gChannel = cChannel
 		    end if
-		    
+		    ScriptRequest = False
 		    OutputInfo(NthField(prefix,"!",1) + " (" + NthField(prefix,"!",2) + ") has joined " + params)
 		    If NthField(prefix,"!",1) = Globals.gNick Then Autoinvoke.Now()
 		  Case "MODE" //mode changes
@@ -936,7 +951,7 @@ Inherits TCPSocket
 		    
 		    OutputInfo(NthField(prefix,"!",1) + " sets channel topic: " + msg + " " + params)
 		    
-		  Case "INVITE" //We are invited to a channel
+		  Case "INVITE" //We are invited to a channel   //USE THIS
 		    prefix = Trim(NthField(sReply, " ", 1)) //User
 		    if prefix.Left(1) = ":" then prefix = prefix.Right(Len(prefix)-1)
 		    params = Trim(NthField(sReply, " ", 3)) //invited nick
@@ -1071,7 +1086,6 @@ Inherits TCPSocket
 		bsIrcSocket comes with ABSOLUTELY NO WARRANTY
 		This is free software, and you are welcome to redistribute it
 		under certain conditions; Please see included license.
-		
 	#tag EndNote
 
 
@@ -1089,6 +1103,10 @@ Inherits TCPSocket
 
 	#tag Property, Flags = &h0
 		cUserName As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		LastNumericCode As Integer
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -1131,6 +1149,11 @@ Inherits TCPSocket
 			Visible=true
 			Group="ID"
 			InheritedFrom="TCPSocket"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="LastNumericCode"
+			Group="Behavior"
+			Type="Integer"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"

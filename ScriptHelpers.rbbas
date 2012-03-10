@@ -178,7 +178,7 @@ Protected Module ScriptHelpers
 		  If GlobalDataStore.Count > MAX_SIZE Then
 		    Return 17
 		  End If
-		  If GlobalDataStore.Size + RequestedSize > MAX_BIN_SIZE Then 
+		  If GlobalDataStore.Size + RequestedSize > MAX_BIN_SIZE Then
 		    Return 18
 		  End If
 		  
@@ -318,7 +318,7 @@ Protected Module ScriptHelpers
 		  End If
 		  
 		  OutputInfo("Loading Scripts...")
-		  If Not gPlugDirectory.Exists Or Not gPlugDirectory.Directory Then 
+		  If Not gPlugDirectory.Exists Or Not gPlugDirectory.Directory Then
 		    OutputWarning("Script directory does not exist or is not a directory!")
 		    LoadWarningLevel = 1
 		    Return 0

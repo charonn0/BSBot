@@ -95,20 +95,28 @@ Inherits ConsoleApplication
 		    bsIrc.Close
 		    isConnected = False
 		  End If
+		  gServer = server
+		  gPort = port
+		  gNick = user
+		  gPassword = password
 		  OutPutInfo("Connecting to server '" + gServer + "' on port " + Str(gPort))
 		  bsIrc = New bsIrcSocket
-		  bsIrc.Address = server
-		  bsIrc.Port = port
-		  bsIrc.cNick = user
-		  OutPutInfo("   Using nickname: " + user)
+		  bsIrc.Address = gserver
+		  bsIrc.Port = gport
+		  bsIrc.cNick = gNick
+		  Settings.gPassword = gPassword
+		  OutPutInfo("   Using nickname: " + gNick)
 		  bsIrc.cUserName = bsIrc.cNick
+		  
+		  manualDisconnect = False
+		  bsIrc.Connect
+		  
 		  If gpassword <> "" Then
 		    OutPutInfo("   Using supplied password")
 		  Else
 		    OutPutInfo("   Using no password")
 		  End If
-		  manualDisconnect = False
-		  bsIrc.Connect
+		  
 		End Sub
 	#tag EndMethod
 
@@ -347,7 +355,7 @@ Inherits ConsoleApplication
 		    Case "--auth"
 		      If UBound(args) > i Then
 		        AuthOverride = GetFolderItem(args(i + 1))
-		        If AuthOverride.Directory Then 
+		        If AuthOverride.Directory Then
 		          OutPutWarning("--auth was passed but pointed to a directory.")
 		          LoadWarningLevel = 1
 		        ElseIf Not AuthOverride.Exists Then
@@ -451,6 +459,9 @@ Inherits ConsoleApplication
 		      Else
 		        OutPutWarning("--scripts was passed but no scripts directory was specified.")
 		      End If
+		    Case "--Interactive"
+		      Interactive = True
+		      OutPutDebug("Interactive mode selected.")
 		    Else
 		      OutPutWarning("Invalid argument: " + args(i))
 		      If LoadWarningLevel < 2 Then LoadWarningLevel = 1
