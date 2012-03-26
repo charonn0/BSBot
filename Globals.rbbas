@@ -328,6 +328,11 @@ Protected Module Globals
 			InheritedFrom="Object"
 		#tag EndViewProperty
 		#tag ViewProperty
+			Name="OverrideUser"
+			Group="Behavior"
+			Type="Integer"
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="ScriptRequest"
 			Group="Behavior"
 			Type="Boolean"

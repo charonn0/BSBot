@@ -217,7 +217,10 @@ Inherits ConsoleApplication
 		        End If
 		      Case "logfile"
 		        If gLogfile <> Nil Then Continue
-		        gLogfile = GetFolderItem(NthField(line, "=", 2))
+		        Dim tmp As String = NthField(line, "=", 2)
+		        gLogfile = GetFolderItem(tmp)
+		        'If gLogfile = Nil Then
+		        
 		        If gLogfile.AbsolutePath = App.ExecutableFile.AbsolutePath Then
 		          gLogfile = Nil
 		          OutPutWarning("   Invalid Log File Path")
