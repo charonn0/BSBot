@@ -145,8 +145,8 @@ Protected Module BuiltIns
 		  If IsAuthorizedUser(caller) Then
 		    ScriptRunner = Nil
 		    Dim plcount As Integer = loadScripts
-		    OutPutInfo(Str(plcount + BuiltIncount) + " scripts loaded; " + Str(BuiltIncount) + " builtins; " + Str(Scripts.Count) + _
-		    " external; " + Str(failedCount) + " not loaded.")
+		    OutPutInfo(Str(plcount + BuiltIncount) + " scripts loaded (" + Str(BuiltIncount) + " BuiltIns, " _
+		    + Str(Scripts.Count - BuiltIncount) + " external; " + Str(failedCount) + " not loaded)")
 		    Return Str(plcount) + " scripts loaded"
 		  Else
 		    OutPutWarning("User '" + Caller + "' denied access to !reload command")
@@ -181,7 +181,7 @@ Protected Module BuiltIns
 		        data(4) = "test!"
 		
 		
-		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See Globals.loadBuiltinTriggers
+		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See ScriptHelpers.loadBuiltinTriggers
 		
 		
 	#tag EndNote

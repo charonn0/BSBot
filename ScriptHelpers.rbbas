@@ -188,16 +188,12 @@ Protected Module ScriptHelpers
 
 	#tag Method, Flags = &h21
 		Private Sub loadBuiltinTriggers()
-		  //Loads built-in triggers. See BuiltIns.Notes
-		  //
-		  //Add your trigger like this:
-		  //Dim myTrigger As New Script("!trigger", "Name", AddressOf BuiltIns.MyTriggerFunction)
-		  //Scripts.Value(myTrigger.Trigger) = myTrigger
-		  //
-		  //See Script.Constructor(String, String, BuiltInTrigger)
+		  //Loads built-in triggers. 
+		  //See: BuiltIns.Notes
+		  //See: Script.Constructor(String, String, BuiltInTrigger)
 		  //
 		  //All script objects are stored in a Dictionary keyed with trigger strings. Thus, it is important
-		  //that the encoding of the trigger be consistant. They should always be in UTF-16. The Script Constructor
+		  //that the encoding of the trigger be consistent. They should always be in UTF-16. The Script Constructor
 		  //guarentees that the Script.Trigger property is UTF-16.
 		  //
 		  //You should check for trigger Reassignments and alter your default trigger accordingly. Reassignments are
