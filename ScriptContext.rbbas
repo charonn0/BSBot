@@ -101,7 +101,7 @@ Protected Class ScriptContext
 		Function FileRead(path As String) As String
 		  Globals.Debug("Read '" + path + "'")
 		  Dim f As FolderItem = GetFolderItem(path)
-		  If f = Nil Then 
+		  If f = Nil Then
 		    Debug("Read failed: File doesn't exist.")
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
@@ -415,13 +415,13 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Function GlobalRead(Index As Integer) As Integer
-		  If GlobalDataStore = Nil Then 
+		  If GlobalDataStore = Nil Then
 		    LastError = 15
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
 		    Return -1
 		  End If
-		  If GlobalDataStore.Count <= Index Then 
+		  If GlobalDataStore.Count <= Index Then
 		    LastError = 11
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
@@ -443,13 +443,13 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Function GlobalRead(Index As Integer) As String
-		  If GlobalDataStore = Nil Then 
+		  If GlobalDataStore = Nil Then
 		    LastError = 15
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
 		    Return ""
 		  End If
-		  If GlobalDataStore.Count <= Index Then 
+		  If GlobalDataStore.Count <= Index Then
 		    LastError = 11
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
@@ -539,13 +539,13 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Function GlobalStore(Key As String, Value As Integer) As Integer
-		  If GlobalDataStore = Nil Then 
+		  If GlobalDataStore = Nil Then
 		    GlobalDataStore = New ThrottledDictionary(key:Value)
 		    Return 0
 		  End If
 		  
 		  LastError = GlobStorThrottle(4)
-		  If LastError <> 0 Then 
+		  If LastError <> 0 Then
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
 		    Return -1
@@ -568,13 +568,13 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Function GlobalStore(Key As String, Value As String) As Integer
-		  If GlobalDataStore = Nil Then 
+		  If GlobalDataStore = Nil Then
 		    GlobalDataStore = New ThrottledDictionary(key:Value)
 		    Return 0
 		  End If
 		  
 		  LastError = GlobStorThrottle(LenB(Value))
-		  If LastError <> 0 Then 
+		  If LastError <> 0 Then
 		    Globals.Debug("Script Exception: " + Str(LastError) + " in " + CurrentMethodName)
 		    Globals.Debug(ErrorMessage(LastError))
 		    Return -1
@@ -682,13 +682,18 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Sub Invite(User As String)
-		  App.bsIrc.preParseOutput("/Invite " + User + " " + Settings.gChannel)
+		  #If Not TargetHasGUI Then 
+		    App.bsIrc.preParseOutput("/Invite " + User + " " + Settings.gChannel)
+		  #Else
+		    OutPutInfo("Invite sent to " + User)
+		  #endif
+		  
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function IPv4DotToInt(dottedIP As String) As UInt32
-		  //Returns an unsigned 32 bit integer (UInt32) NOT a plain Integer. Putting the return value into a signed integer variable will 
+		  //Returns an unsigned 32 bit integer (UInt32) NOT a plain Integer. Putting the return value into a signed integer variable will
 		  //cause weirdness
 		  Globals.Debug("Convert Dotted IP to Integer")
 		  Return (Val(NthField(dottedIP, ".", 4))) + (Val(NthField(dottedIP, ".", 3)) * 256) + (Val(NthField(dottedIP, ".", 2)) * 256 ^ 2) + (Val(NthField(dottedIP, ".", 1)) * 256 ^ 3)
@@ -871,13 +876,13 @@ Protected Class ScriptContext
 		    While sr.State = sr.kStateRunning
 		      App.DoEvents
 		    Wend
-		    If Globals.SubRetVal.Ubound = -1 Then 
+		    If Globals.SubRetVal.Ubound = -1 Then
 		      LastError = 3
 		      Return 0.0
 		    End If
 		    Return Val(Globals.SubRetVal(0))
 		  Catch err As ScriptException
-		    Print(err.Message)
+		    OutPutWarning(err.Message)
 		    //Return 0.0
 		  End Try
 		End Function
@@ -1029,7 +1034,7 @@ Protected Class ScriptContext
 		  //ScriptInvoke invokes the script matching the trigger in a new instance of the ScriptHost class
 		  //and using a new instance of the ScriptContext
 		  
-		  If CallDepth > Globals.gMaxScriptDepth Then 
+		  If CallDepth > Globals.gMaxScriptDepth Then
 		    OutPutWarning("Subscript Call Aborted: Maximum call chain depth exceeded!")
 		    LastError = 5
 		    Return Nil
@@ -1066,7 +1071,7 @@ Protected Class ScriptContext
 		        CurrentUser = oldUser
 		        Return Globals.SubRetVal
 		      Catch err As ScriptException
-		        Print(err.Message)
+		        OutPutWarning(err.Message)
 		        CurrentArgs = oldArgs
 		        CurrentUser = oldUser
 		        LastError = sc.LastError
@@ -1103,7 +1108,7 @@ Protected Class ScriptContext
 		  Globals.Debug("Cipher " + PlainText)
 		  Dim strKey As String = Left(Key + "00000000", 8)
 		  
-		  Dim MM As MemoryBlock = PlainText 
+		  Dim MM As MemoryBlock = PlainText
 		  Dim MM2 As New MemoryBlock(LenB(PlainText))
 		  Dim memAsciiArray(255), memKeyArray(255), memJump, memTemp, memY, intKeyLength, intIndex, intT, intX As integer
 		  
@@ -1361,7 +1366,12 @@ Protected Class ScriptContext
 			Set
 			  If Globals.IsOwner(Nick) Or Globals.IsAuthorizedUser(Nick) Then
 			    Globals.ScriptRequest = True
-			    App.bsIrc.preParseOutput("/nick " + value)
+			    #If TargetHasGUI Then
+			      OutPutInfo("Nick changed to " + value)
+			      Settings.gNick = value
+			    #Else
+			      App.bsIrc.preParseOutput("/nick " + value)
+			    #endif
 			    While ScriptRequest
 			      App.DoEvents
 			    Wend
@@ -1422,9 +1432,14 @@ Protected Class ScriptContext
 			  'Debug(CurrentMethodName + " is a Read-Only property.")
 			  'LastError = 9
 			  If Globals.IsOwner(Nick) Or Globals.IsAuthorizedUser(Nick) Then
-			    Globals.ScriptRequest = True
-			    App.bsIrc.preParseOutput("/part " + Settings.gChannel)
-			    App.bsIrc.preParseOutput("/join " + value)
+			    #If TargetHasGUI Then
+			      OutPutInfo("Changing channel to: " + value)
+			      Settings.gChannel = value
+			    #Else
+			      Globals.ScriptRequest = True
+			      App.bsIrc.preParseOutput("/part " + Settings.gChannel)
+			      App.bsIrc.preParseOutput("/join " + value)
+			    #endif
 			    While ScriptRequest
 			      App.DoEvents
 			    Wend
@@ -1592,7 +1607,7 @@ Protected Class ScriptContext
 			    OutPutInfo("Script request to change servers has been granted.")
 			    OutPutInfo("New server address: " + value)
 			    Settings.gServer = value
-			    App.reconnect
+			    #If Not TargetHasGUI Then App.reconnect
 			  Else
 			    OutPutWarning("An unauthorized attempt to change the server by a script was ignored.")
 			    LastError = 2
@@ -1626,8 +1641,13 @@ Protected Class ScriptContext
 			  'LastError = 9
 			  
 			  If Globals.IsOwner(Nick) Or Globals.IsAuthorizedUser(Nick) Then
-			    Globals.ScriptRequest = True
-			    App.bsIrc.Write(":" + gNick + " TOPIC " + gChannel + " :" + value + EndOfLine.Windows)
+			    #If TargetHasGUI Then
+			      OutPutInfo("Change topic to: " + value)
+			      Settings.cTopic = Value
+			    #Else
+			      Globals.ScriptRequest = True
+			      App.bsIrc.Write(":" + gNick + " TOPIC " + gChannel + " :" + value + EndOfLine.Windows)
+			    #endif
 			    While ScriptRequest
 			      App.DoEvents
 			    Wend
@@ -1701,7 +1721,12 @@ Protected Class ScriptContext
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  return App.bsIrc.LastNumericCode
+			  #If TargetHasGUI Then
+			    OutPutInfo("No IRC socket.")
+			    Return 0
+			  #Else
+			    return App.bsIrc.LastNumericCode
+			  #endif
 			  
 			  Exception
 			    LastError = 99

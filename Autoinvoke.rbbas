@@ -15,7 +15,7 @@ Protected Module Autoinvoke
 		    Try
 		      Call ScriptExecute
 		    Catch err As ScriptException
-		      Print(err.Message)
+		      OutPutWarning(err.Message)
 		    End Try
 		  Next
 		End Sub

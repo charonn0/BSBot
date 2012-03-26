@@ -5,7 +5,7 @@ Inherits RBScript
 		Sub CompilerError(line As Integer, errorNumber As Integer, errorMsg As String)
 		  #pragma Unused errorMsg
 		  #If TargetHasGUI Then Window1.TestField.AddBookmark(line)
-		  If Not CheckMode Then 
+		  If Not CheckMode Then
 		    OutputWarning("Script sanity check failure at runtime:")
 		    OutPutWarning(Str(errorNumber) + ", " + ErrorCodeToString(errorNumber) + ", line: " + Str(line))
 		    OutPutWarning("Script Aborted!")
@@ -22,14 +22,18 @@ Inherits RBScript
 		Function Input(prompt As String) As String
 		  //Scripts really shouldn't be calling this since no user may be at the keyboard.
 		  
-		  If Interactive Then
-		    OutputAttention("A Script Requires Manual Input: " + prompt)
-		    Print(prompt)
-		    Return Input()
-		  Else
-		    Globals.LastError = 21  //Input requested but not in Interactive mode
-		    OutPutWarning("A script requested interactive user input, but the bot is not in interactive mode.")
-		  End If
+		  #If TargetHasGUI Then
+		    Return Window1.args.Text
+		  #Else
+		    If Interactive Then
+		      OutputAttention("A Script Requires Manual Input: " + prompt)
+		      Print(prompt)
+		      Return Input()
+		    Else
+		      Globals.LastError = 21  //Input requested but not in Interactive mode
+		      OutPutWarning("A script requested interactive user input, but the bot is not in interactive mode.")
+		    End If
+		  #endif
 		End Function
 	#tag EndEvent
 

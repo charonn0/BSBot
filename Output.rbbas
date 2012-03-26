@@ -64,11 +64,13 @@ Protected Module Output
 
 	#tag Method, Flags = &h0
 		Sub OutPutInfo(msg As String)
-		  If App.bsIrc <> Nil Then
-		    If App.bsIrc.MOTD And Not Globals.gMOTD Then
-		      Return
+		  #If Not TargetHasGUI Then
+		    If App.bsIrc <> Nil Then
+		      If App.bsIrc.MOTD And Not Globals.gMOTD Then
+		        Return
+		      End If
 		    End If
-		  End If
+		  #endif
 		  Log("Info: " + msg)
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)

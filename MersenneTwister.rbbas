@@ -56,7 +56,7 @@ Protected Module MersenneTwister
 		  for mti = 1 to N - 1
 		    // See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier
 		    // In the previous versions, MSBs of the seed affect
-		    // only MSBs of the array mt[]. 
+		    // only MSBs of the array mt[].
 		    mt( mti ) = (1812433253 * (Bitwise.BitXor( mt( mti - 1 ), (Bitwise.ShiftRight( mt( mti - 1 ), 30 )))) + mti)
 		    
 		    //  for >32 bit machines

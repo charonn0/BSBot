@@ -29,7 +29,7 @@ Protected Module Globals
 		  If ghalt = 1 Then
 		    If Interactive Then
 		      OutputAttention("BSBot has halted execution due to an error." + EndOfLine + "Press Enter to quit.")
-		      Call Input()
+		      #If Not TargetHasGUI Then Call Input()
 		    Else
 		      OutPutFatal("BSBot has halted execution due to an error.")
 		    End If
@@ -43,7 +43,7 @@ Protected Module Globals
 		      OutPutInfo("Check run did not complete due to Fatal Errors.")
 		    End Select
 		    OutPutInfo("Press Enter to quit...")
-		    Call Input()
+		    #If Not TargetHasGUI Then Call Input()
 		  End If
 		  Quit(ExitCode)
 		End Sub
@@ -51,6 +51,11 @@ Protected Module Globals
 
 	#tag Method, Flags = &h0
 		Function IsAuthorizedUser(User As String) As Boolean
+		  If TargetHasGUI And OverrideUser > -1 Then
+		    Return (OverrideUser = 2) Or (OverrideUser = 3) Or (OverrideUser = 1)
+		  End If
+		  
+		  
 		  If User.Trim = "" Or User.Trim = "BSBotScriptRuntime" Then Return False  //The Script runtime is NEVER authorized.
 		  If IsOwner(User) Then Return True
 		  Dim f As FolderItem
@@ -79,6 +84,10 @@ Protected Module Globals
 
 	#tag Method, Flags = &h0
 		Function IsOwner(User As String) As Boolean
+		  If TargetHasGUI And OverrideUser > -1 Then
+		    Return (OverrideUser = 2) Or (OverrideUser = 3)
+		  End If
+		  
 		  If User.Trim = "" Or User.Trim = "BSBotScriptRuntime" Then Return False  //The Script runtime is NEVER authorized.
 		  If User.Trim = "BSBotExecutive" Then Return True  //BSBotExecutive is ALWAYS authorized
 		  Dim f As FolderItem
@@ -106,21 +115,23 @@ Protected Module Globals
 
 	#tag Method, Flags = &h0
 		Sub NickInUse()
-		  OutPutWarning("The nickname " + Globals.gNick + " is already in use!")
-		  If Not ScriptRequest Then
-		    If Interactive Then
-		      OutputAttention("Enter a new nickname and press enter, or press Control+C to quit:")
-		      Globals.gNick = Input()
-		      Log("Interactive user selected '" + Globals.gNick + "' as bot nick")
-		      App.reconnect
+		  #If Not TargetHasGUI Then
+		    OutPutWarning("The nickname " + Globals.gNick + " is already in use!")
+		    If Not ScriptRequest Then
+		      If Interactive Then
+		        OutputAttention("Enter a new nickname and press enter, or press Control+C to quit:")
+		        Globals.gNick = Input()
+		        Log("Interactive user selected '" + Globals.gNick + "' as bot nick")
+		        App.reconnect
+		      Else
+		        OutPutFatal("The bot nick name is invalid or in use.")
+		        manualDisconnect = True
+		        App.disconnect
+		      End If
 		    Else
-		      OutPutFatal("The bot nick name is invalid or in use.")
-		      manualDisconnect = True
-		      App.disconnect
+		      LastError = 19
 		    End If
-		  Else
-		    LastError = 19
-		  End If
+		  #endif
 		  
 		  ScriptRequest = False
 		End Sub
@@ -141,10 +152,12 @@ Protected Module Globals
 
 	#tag Method, Flags = &h0
 		Sub ReloadNames(ByRef Context As ScriptContext)
-		  Globals.cNamesDict = New Dictionary
-		  App.bsIrc.preParseOutput("/names " + Globals.gChannel)
-		  If WaitingScripts = Nil Then WaitingScripts = New Dictionary
-		  WaitingScripts.Value("Nick") = Context
+		  #If Not TargetHasGUI Then
+		    Globals.cNamesDict = New Dictionary
+		    App.bsIrc.preParseOutput("/names " + Globals.gChannel)
+		    If WaitingScripts = Nil Then WaitingScripts = New Dictionary
+		    WaitingScripts.Value("Nick") = Context
+		  #endif
 		End Sub
 	#tag EndMethod
 
@@ -202,7 +215,7 @@ Protected Module Globals
 		#tag EndGetter
 		#tag Setter
 			Set
-			  If value > mLoadWarningLevel Then 
+			  If value > mLoadWarningLevel Then
 			    mLoadWarningLevel = value
 			  End If
 			End Set
@@ -221,6 +234,30 @@ Protected Module Globals
 	#tag Property, Flags = &h21
 		Private mLoadWarningLevel As Integer
 	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mOverrideUser As Integer = -1
+	#tag EndProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  #If TargetHasGUI Then
+			    Return mOverrideUser
+			  #Else
+			    Return -1
+			  #endif
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  #If TargetHasGUI Then
+			    mOverrideUser = value
+			  #endif
+			End Set
+		#tag EndSetter
+		OverrideUser As Integer
+	#tag EndComputedProperty
 
 	#tag Property, Flags = &h0
 		ScriptRequest As Boolean

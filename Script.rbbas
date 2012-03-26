@@ -25,7 +25,7 @@ Protected Class Script
 		        Trigger = NthField(line, "=", 2).Trim
 		        s.Remove(i)
 		        If Reassignments.HasKey(Me.Trigger) Then Me.Trigger = Reassignments.Value(Me.Trigger)
-		        If Trigger = "AutoInvoke" Then 
+		        If Trigger = "AutoInvoke" Then
 		          Autoinvoked = True
 		        Else
 		          If Left(Trigger, 1) <> "!" Then
@@ -124,7 +124,6 @@ Protected Class Script
 		always be "".
 		
 		See also, builtIns.Notes
-		
 	#tag EndNote
 
 

@@ -182,8 +182,6 @@ Protected Module BuiltIns
 		
 		
 		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See ScriptHelpers.loadBuiltinTriggers
-		
-		
 	#tag EndNote
 
 

@@ -188,7 +188,7 @@ Protected Module ScriptHelpers
 
 	#tag Method, Flags = &h21
 		Private Sub loadBuiltinTriggers()
-		  //Loads built-in triggers. 
+		  //Loads built-in triggers.
 		  //See: BuiltIns.Notes
 		  //See: Script.Constructor(String, String, BuiltInTrigger)
 		  //
