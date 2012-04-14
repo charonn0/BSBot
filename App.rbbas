@@ -5,10 +5,6 @@ Inherits ConsoleApplication
 		Function Run(args() as String) As Integer
 		  Call Console.SetTitle("BSBot " + Str(Version))
 		  dataflow = New Mutex("dataflow")
-		  Log("BS Bot " + Str(Version))
-		  Log("Copyright (c)2011 Boredom Software")
-		  Log("http://www.boredomsoft.org")
-		  Log("------------------------------------")
 		  Dim old As UInt16 = SetConsoleTextColor(Console.TEXT_GREEN)
 		  Stdout.Write("BS Bot ")
 		  stdout.Write(Str(Version) + EndOfLine)
@@ -22,7 +18,8 @@ Inherits ConsoleApplication
 		  If Bootstrap() And ghalt < 2 Then
 		    bsIrc = New bsIrcSocket
 		    connect(gServer, gPort, gNick, gPassword)
-		    While True  //Sleep, Poll, Repeat
+		    'InitInteractive() nope
+		    While True
 		      DoEvents
 		    Wend
 		  Else
@@ -81,8 +78,8 @@ Inherits ConsoleApplication
 		    Call SetConsoleTextColor(Console.TEXT_RED)
 		    stdout.Write(" Unable to continue. Refer to the above warnings" + EndOfLine)
 		    Call SetConsoleTextColor(Console.OldSetting)
-		    Log("Bootstrap failed!")
-		    Log("Refer to above warnings.")
+		    ErrorLog("Bootstrap failed!")
+		    ErrorLog("Refer to above warnings.")
 		    Return False
 		  End Select
 		End Function
@@ -130,10 +127,40 @@ Inherits ConsoleApplication
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub InitInteractive()
+		  InputThread = New InteractiveThread
+		  AddHandler InputThread.KeyPress, AddressOf KeyHandler
+		  InputThread.Run
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub KeyHandler(Sender As Interactivethread, Key As String)
+		  Static buffer As String
+		  
+		  If Key = Chr(&h0D) Then
+		    stdout.Write(EndOfLine)
+		    If buffer.Trim <> "" Then 
+		      bsIrc.preParseOutput(buffer)
+		      OutPutConsole(buffer)
+		    End If
+		    buffer = ""
+		  Else
+		    stdout.Write(Key)
+		    buffer = buffer + Key
+		  End If
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Sub loadConfFiles()
 		  If gConfFile = Nil Then
-		    gConfFile = App.ExecutableFile.Parent.Child("bot.conf")
+		    #If Not DebugBuild Then
+		      gConfFile = App.ExecutableFile.Parent.Child("bot.conf")
+		    #else
+		      gConfFile = App.ExecutableFile.Parent.Parent.Child("bot.conf")
+		    #endif
 		  End If
 		  If gConfFile.Exists Then
 		    OutPutInfo("Loading bot.conf...")
@@ -529,6 +556,10 @@ Inherits ConsoleApplication
 
 	#tag Property, Flags = &h0
 		bsIrc As bsIrcSocket
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		InputThread As InteractiveThread
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

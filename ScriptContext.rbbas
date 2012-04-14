@@ -26,6 +26,22 @@ Protected Class ScriptContext
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function CreateTimer(TTL As Integer, ScriptName As String) As Integer
+		  'Dim t As New Timer
+		  'AddHandler t.Action, AddressOf TimerLoopHander
+		  Dim i As Integer = randNumber(100, 1000)
+		  While Not Timers.HasKey(i)
+		    i = randNumber(100, 1000)
+		  Wend
+		  Dim x As TimerJob
+		  x.TTL = TTL
+		  x.Invoke = ScriptName
+		  Timers.Value(i) = x
+		  Return i
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub Debug(Message As String)
 		  //Don't call this method except from a script. Use Globals.Debug instead.
 		  Globals.Debug(Message)
@@ -682,7 +698,7 @@ Protected Class ScriptContext
 
 	#tag Method, Flags = &h0
 		Sub Invite(User As String)
-		  #If Not TargetHasGUI Then 
+		  #If Not TargetHasGUI Then
 		    App.bsIrc.preParseOutput("/Invite " + User + " " + Settings.gChannel)
 		  #Else
 		    OutPutInfo("Invite sent to " + User)
@@ -1294,6 +1310,22 @@ Protected Class ScriptContext
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub TimerLoopHander(Sender As Timer)
+		  #pragma Unused Sender
+		  For Each Key As Integer In Timers.Keys
+		    Dim x As TimerJob = Timers.Value(Key)
+		    If x.TTL = 0 Then
+		      Timers.Remove(Key)
+		      Call GlobalStore(Key:ScriptInvoke(x.Invoke, ""))
+		    ElseIf x.TTL > 0 Then
+		      x.TTL = x.TTL - 1
+		      Timers.Value(Key) = x
+		    End If
+		  Next
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Function UserList() As String()
 		  If Globals.cNamesDict = Nil Then Globals.ReloadNames(Self)
@@ -1539,6 +1571,10 @@ Protected Class ScriptContext
 		Private mLastError As Integer
 	#tag EndProperty
 
+	#tag Property, Flags = &h21
+		Private mTimers As Dictionary
+	#tag EndProperty
+
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
@@ -1622,6 +1658,31 @@ Protected Class ScriptContext
 	#tag Property, Flags = &h0
 		subcontext As Boolean
 	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private TimerLoop As Timer
+	#tag EndProperty
+
+	#tag ComputedProperty, Flags = &h21
+		#tag Getter
+			Get
+			  If mTimers = Nil Then 
+			    mTimers = New Dictionary
+			    TimerLoop = New Timer
+			    TimerLoop.Period = 1000
+			    AddHandler TimerLoop.Action, AddressOf TimerLoopHander
+			    TimerLoop.Mode = Timer.ModeMultiple
+			  End If
+			  return mTimers
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  mTimers = value
+			End Set
+		#tag EndSetter
+		Private Timers As Dictionary
+	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
@@ -1811,6 +1872,13 @@ Protected Class ScriptContext
 
 	#tag Constant, Name = TH32CS_SNAPPROCESS, Type = Double, Dynamic = False, Default = \"&h2", Scope = Public
 	#tag EndConstant
+
+
+	#tag Structure, Name = TimerJob, Flags = &h0
+		TTL As Integer
+		  Invoke As String*255
+		Params As String*255
+	#tag EndStructure
 
 
 	#tag ViewBehavior

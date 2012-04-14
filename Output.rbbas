@@ -1,6 +1,14 @@
 #tag Module
 Protected Module Output
 	#tag Method, Flags = &h0
+		Sub ErrorLog(msg As String)
+		  If ErrorStream = Nil Then ErrorStream = ErrorStream.Append(App.ExecutableFile.Parent.Child("error.log"))
+		  Dim d As New Date
+		  ErrorStream.WriteLine(d.SQLDateTime + ": " + msg)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub Log(msg As String)
 		  If gLogfile <> Nil Then
 		    If logStream = Nil Then logStream = logStream.Append(gLogfile)
@@ -13,7 +21,7 @@ Protected Module Output
 	#tag Method, Flags = &h0
 		Sub OutputAttention(msg As String)
 		  If Not Interactive Then Return
-		  Log("ATTENTION! '" + msg + "'")
+		  ErrorLog("ATTENTION! '" + msg + "'")
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)
 		    Window1.output.RowPicture(Window1.output.LastIndex) = red
@@ -37,6 +45,28 @@ Protected Module Output
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub OutPutConsole(msg As String)
+		  #If Not TargetHasGUI Then
+		    If App.bsIrc <> Nil Then
+		      If App.bsIrc.MOTD And Not Globals.gMOTD Then
+		        Return
+		      End If
+		    End If
+		  #endif
+		  Log("Console: " + msg)
+		  #If TargetHasGUI Then
+		    Window1.output.AddRow(msg)
+		    Window1.output.RowPicture(Window1.output.LastIndex) = green
+		  #Else
+		    Dim old As UInt16 = SetConsoleTextColor(Console.TEXT_GREEN Or Console.TEXT_BLUE)
+		    Stdout.Write("   Console: ")
+		    Call SetConsoleTextColor(old)
+		    Stdout.Write(msg + EndOfLine)
+		  #endif
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub OutPutDebug(msg As String)
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)
@@ -49,7 +79,7 @@ Protected Module Output
 
 	#tag Method, Flags = &h0
 		Sub OutPutFatal(msg As String)
-		  Log("FATAL: " + msg)
+		  ErrorLog("FATAL: " + msg)
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)
 		    Window1.output.RowPicture(Window1.output.LastIndex) = red
@@ -71,7 +101,7 @@ Protected Module Output
 		      End If
 		    End If
 		  #endif
-		  Log("Info: " + msg)
+		  ErrorLog("Info: " + msg)
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)
 		    Window1.output.RowPicture(Window1.output.LastIndex) = green
@@ -86,7 +116,7 @@ Protected Module Output
 
 	#tag Method, Flags = &h0
 		Sub OutPutWarning(msg As String)
-		  Log("WARN: " + msg)
+		  ErrorLog("WARN: " + msg)
 		  #If TargetHasGUI Then
 		    Window1.output.AddRow(msg)
 		    Window1.output.RowPicture(Window1.output.LastIndex) = red
@@ -99,6 +129,10 @@ Protected Module Output
 		End Sub
 	#tag EndMethod
 
+
+	#tag Property, Flags = &h21
+		Private ErrorStream As TextOutputStream
+	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		gLogfile As FolderItem

