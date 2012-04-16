@@ -1666,7 +1666,7 @@ Protected Class ScriptContext
 	#tag ComputedProperty, Flags = &h21
 		#tag Getter
 			Get
-			  If mTimers = Nil Then 
+			  If mTimers = Nil Then
 			    mTimers = New Dictionary
 			    TimerLoop = New Timer
 			    TimerLoop.Period = 1000

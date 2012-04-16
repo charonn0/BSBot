@@ -26,6 +26,27 @@ Protected Module Globals
 
 	#tag Method, Flags = &h0
 		Sub Halt(ExitCode As Integer)
+		  'The Halt() function is the preferred way to terminate BSBot.
+		  'It determines whether BSBot will print an error or other informational text before exiting. Informational text
+		  'includes, in ghalt level 2, information about the success and failure of each script file to load.
+		  '
+		  'In addition to extra debugging information about the scripts, ghalt level 2 prevents BSBot from connecting to an IRC server.
+		  
+		  'You must pass an ExitCode value to this function. The ExitCode is the numberic value which will be returned to BSBot's parent
+		  'process.
+		  
+		  'Currently specified exit codes for BSBot are:
+		  '0     Exit, generic
+		  '1     Bootstrap fatal error
+		  '2     An unhandled exception was raised (NOT in a script.)
+		  '3     BSBot was kicked from the IRC channel and autorejoin=0
+		  '4     A script called TerminateBot successfully.
+		  '5     A socket error.
+		  '6     The server did not respond in a timely manner (10 seconds)
+		  '7     Precautionary Quit due to possible memory corruption.
+		  
+		  
+		  
 		  If ghalt = 1 Then
 		    If Interactive Then
 		      OutputAttention("BSBot has halted execution due to an error." + EndOfLine + "Press Enter to quit.")
@@ -190,6 +211,19 @@ Protected Module Globals
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
+		#tag Note
+			ghalt represents the Global Halt level. It is only ever INCREMENTED. That means that if you increase the ghalt level,
+			you cannot thereafter set the ghalt level to anything less than the level you just set.
+			
+			The ghalt level is directly related to the --halt and --check command line arguments. It represents what level of operation the program
+			is running at and what steps the program will take in the event of a fatal error.
+			
+			The default ghalt level is 0. This is normal operation mode for BSBot. In level 1, when BSBot calls Halt() it will NOT automatically
+			quit until the user presses Enter. In level 2, you get everything in level 1 plus BSBot won't try to actually connect to anything. Level 2
+			is intended for script writers to help debug scripts without constantly trying to connect to an IRC server.
+			
+			Refer to the Halt() method for info about quitting BSBot gracefully.
+		#tag EndNote
 		#tag Getter
 			Get
 			  return mghalt
@@ -253,6 +287,8 @@ Protected Module Globals
 			Set
 			  #If TargetHasGUI Then
 			    mOverrideUser = value
+			  #Else
+			    #pragma Unused value
 			  #endif
 			End Set
 		#tag EndSetter
@@ -261,6 +297,10 @@ Protected Module Globals
 
 	#tag Property, Flags = &h0
 		ScriptRequest As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		SSL As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

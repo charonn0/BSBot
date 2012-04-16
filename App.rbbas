@@ -106,6 +106,7 @@ Inherits ConsoleApplication
 		  bsIrc.cUserName = bsIrc.cNick
 		  
 		  manualDisconnect = False
+		  bsIrc.Secure = SSL
 		  bsIrc.Connect
 		  
 		  If gpassword <> "" Then
@@ -123,32 +124,6 @@ Inherits ConsoleApplication
 		    bsIrc.Disconnect
 		    bsIrc.Close
 		    manualDisconnect = True
-		  End If
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub InitInteractive()
-		  InputThread = New InteractiveThread
-		  AddHandler InputThread.KeyPress, AddressOf KeyHandler
-		  InputThread.Run
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub KeyHandler(Sender As Interactivethread, Key As String)
-		  Static buffer As String
-		  
-		  If Key = Chr(&h0D) Then
-		    stdout.Write(EndOfLine)
-		    If buffer.Trim <> "" Then 
-		      bsIrc.preParseOutput(buffer)
-		      OutPutConsole(buffer)
-		    End If
-		    buffer = ""
-		  Else
-		    stdout.Write(Key)
-		    buffer = buffer + Key
 		  End If
 		End Sub
 	#tag EndMethod
@@ -177,6 +152,8 @@ Inherits ConsoleApplication
 		        If gPort <> 0 Then Continue
 		        gPort = Val(NthField(line, "=", 2))
 		        OutPutInfo("   Port: " + Str(gPort))
+		      Case "SSL"
+		        SSL = True
 		      Case "reassign"
 		        Dim old, news As String
 		        old = NthField(NthField(line, ">", 1), "=", 2)
@@ -315,7 +292,7 @@ Inherits ConsoleApplication
 	#tag Method, Flags = &h21
 		Private Sub ParseArgs(args() As String)
 		  For i As Integer = 1 To UBound(args)
-		    Select Case args(i)
+		    Select Case args(i).Trim
 		    Case "--debug"
 		      DebugMode = True
 		      OutPutInfo("Debug mode selected.")
@@ -343,6 +320,8 @@ Inherits ConsoleApplication
 		        OutPutWarning("--port was passed but no port number was specified.")
 		        LoadWarningLevel = 1
 		      End If
+		    Case "--ssl"
+		      SSL = True
 		    Case "--nick"
 		      If UBound(args) > i Then
 		        gNick = args(i + 1)
@@ -489,10 +468,8 @@ Inherits ConsoleApplication
 		      Else
 		        OutPutWarning("--scripts was passed but no scripts directory was specified.")
 		      End If
-		    Case "--Interactive"
-		      Interactive = True
-		      OutPutDebug("Interactive mode selected.")
 		    Else
+		      If args(i).Trim = "" Then Continue
 		      OutPutWarning("Invalid argument: " + args(i))
 		      If LoadWarningLevel < 2 Then LoadWarningLevel = 1
 		    End Select
@@ -556,10 +533,6 @@ Inherits ConsoleApplication
 
 	#tag Property, Flags = &h0
 		bsIrc As bsIrcSocket
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		InputThread As InteractiveThread
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
