@@ -491,7 +491,12 @@ Inherits ConsoleApplication
 		  If ghalt = 2 Then Return
 		  
 		  If AuthOverride = Nil Then
-		    Dim f As FolderItem = App.ExecutableFile.Parent.Child("authUsers.conf")
+		    Dim f As FolderItem 
+		    #If Not DebugBuild Then
+		      f = App.ExecutableFile.Parent.Child("authUsers.conf")
+		    #else
+		      f = App.ExecutableFile.Parent.Parent.Child("authUsers.conf")
+		    #endif
 		    If f = Nil Then
 		      OutPutInfo("No authUsers.conf file. Some features disabled.")
 		    Else
@@ -499,6 +504,24 @@ Inherits ConsoleApplication
 		        AuthOverride = f
 		      Else
 		        OutPutInfo("No authUsers.conf file. Some features disabled.")
+		      End If
+		    End If
+		  End If
+		  
+		  If OwnOverride = Nil Then
+		    Dim f As FolderItem
+		    #If Not DebugBuild Then
+		      f = App.ExecutableFile.Parent.Child("owners.conf")
+		    #else
+		      f = App.ExecutableFile.Parent.Parent.Child("owners.conf")
+		    #endif
+		    If f = Nil Then
+		      OutPutInfo("No owners.conf file. Some features disabled.")
+		    Else
+		      If f.Exists Then
+		        OwnOverride = f
+		      Else
+		        OutPutInfo("No owners.conf file. Some features disabled.")
 		      End If
 		    End If
 		  End If
