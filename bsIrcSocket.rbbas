@@ -1142,23 +1142,45 @@ Inherits SSLSocket
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="Address"
-			Visible=true
-			Group="Behavior"
-			Type="String"
-			InheritedFrom="TCPSocket"
-		#tag EndViewProperty
-		#tag ViewProperty
 			Name="cChannel"
 			Group="Behavior"
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
+			Name="CertificateFile"
+			Visible=true
+			Group="Behavior"
+			Type="FolderItem"
+			InheritedFrom="SSLSocket"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="CertificatePassword"
+			Visible=true
+			Group="Behavior"
+			Type="String"
+			InheritedFrom="SSLSocket"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="CertificateRejectionFile"
+			Visible=true
+			Group="Behavior"
+			Type="FolderItem"
+			InheritedFrom="SSLSocket"
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="cNick"
 			Group="Behavior"
 			Type="String"
 			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ConnectionType"
+			Visible=true
+			Group="Behavior"
+			InitialValue="2"
+			Type="Integer"
+			InheritedFrom="SSLSocket"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="cUserName"
@@ -1196,18 +1218,17 @@ Inherits SSLSocket
 			InheritedFrom="TCPSocket"
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Port"
-			Visible=true
-			Group="Behavior"
-			InitialValue="0"
-			Type="Integer"
-			InheritedFrom="TCPSocket"
-		#tag EndViewProperty
-		#tag ViewProperty
 			Name="sAddress"
 			Group="Behavior"
 			Type="String"
 			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Secure"
+			Visible=true
+			Group="Behavior"
+			Type="Boolean"
+			InheritedFrom="SSLSocket"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
