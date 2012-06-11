@@ -1084,7 +1084,7 @@ Inherits SSLSocket
 
 
 	#tag Note, Name = LICENSE
-		bsIrcSocket - REALbasic class for IRC implementations
+		roSocket - REALbasic class for IRC implementations
 		Copyright (C) 2004  Seth Duke
 		
 		This program is free software; you can redistribute it and/or modify
@@ -1100,8 +1100,8 @@ Inherits SSLSocket
 		along with this program; if not, write to the Free Software
 		Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		
-		bsIrcSocket v0.1.0d, Copyright (C) 2004  Seth Duke
-		bsIrcSocket comes with ABSOLUTELY NO WARRANTY
+		roSocket v0.1.0d, Copyright (C) 2004  Seth Duke
+		roSocket comes with ABSOLUTELY NO WARRANTY
 		This is free software, and you are welcome to redistribute it
 		under certain conditions; Please see included license.
 	#tag EndNote
