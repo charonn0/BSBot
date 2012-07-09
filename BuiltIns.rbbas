@@ -181,7 +181,7 @@ Protected Module BuiltIns
 		        data(4) = "test!"
 		
 		
-		After creating you BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See ScriptHelpers.loadBuiltinTriggers
+		After creating your BuiltInTrigger function, you must cause it to be loaded whenever scripts are loaded. See ScriptHelpers.loadBuiltinTriggers
 	#tag EndNote
 
 

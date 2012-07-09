@@ -21,39 +21,20 @@ Inherits RBScript
 	#tag Event
 		Function Input(prompt As String) As String
 		  //Scripts really shouldn't be calling this since no user may be at the keyboard.
-		  
-		  #If TargetHasGUI Then
-		    Return Window1.args.Text
-		  #Else
-		    If Interactive Then
-		      OutputAttention("A Script Requires Manual Input: " + prompt)
-		      Print(prompt)
-		      Return Input()
-		    Else
-		      Globals.LastError = 21  //Input requested but not in Interactive mode
-		      OutPutWarning("A script requested interactive user input, but the bot is not in interactive mode.")
-		    End If
-		  #endif
+		  Return ""
 		End Function
 	#tag EndEvent
 
 	#tag Event
 		Sub Print(msg As String)
-		  OutPutInfo("Script: " + msg)
+		  OutPutInfo(msg)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
 		Sub RuntimeError(line As Integer, error As RuntimeException)
-		  '#pragma BreakOnExceptions off
-		  'Dim err As New ScriptException
-		  'err.ErrorNumber = line
-		  'err.Message = error.Message
-		  'Raise err
 		  If error.ErrorNumber = -7 Then Raise error
-		  If error.ErrorNumber = 98 Then
-		    OutPutWarning("Script has run out of time but is still running. Terminating!")
-		  End If
+		  
 		  #If TargetHasGUI Then Window1.TestField.AddBookmark(line)
 		  Dim errName As String = error.Message
 		  If errName = "" Then
@@ -66,36 +47,8 @@ Inherits RBScript
 	#tag EndEvent
 
 
-	#tag Method, Flags = &h1000
-		Sub Constructor()
-		  TimeOutTimer = New Timer
-		  TimeOutTimer.Period = 60000  //1 min
-		  TimeOutTimer.Mode = Timer.ModeSingle
-		  //AddHandler TimeOutTimer.Action, AddressOf Terminate
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Terminate(Sender As Timer)
-		  #pragma Unused Sender
-		  FakeError = True
-		  Dim err As RuntimeException
-		  err.ErrorNumber = 98
-		  Raise err
-		End Sub
-	#tag EndMethod
-
-
 	#tag Property, Flags = &h0
 		CheckMode As Boolean
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private FakeError As Boolean
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private TimeOutTimer As Timer
 	#tag EndProperty
 
 

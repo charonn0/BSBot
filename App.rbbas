@@ -263,18 +263,6 @@ Inherits ConsoleApplication
 		    End If
 		  End If
 		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
 		End Sub
 	#tag EndMethod
 
@@ -491,7 +479,7 @@ Inherits ConsoleApplication
 		  If ghalt = 2 Then Return
 		  
 		  If AuthOverride = Nil Then
-		    Dim f As FolderItem 
+		    Dim f As FolderItem
 		    #If Not DebugBuild Then
 		      f = App.ExecutableFile.Parent.Child("authUsers.conf")
 		    #else

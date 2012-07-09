@@ -1,2 +1,4 @@
 *.rbuistate
-
+.gitignore
+Build Automation.rbbas
+*.conf
