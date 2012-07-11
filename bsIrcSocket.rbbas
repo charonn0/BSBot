@@ -850,6 +850,7 @@ Inherits SSLSocket
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))
 		    OutputInfo(msg)
+		    Halt(8)
 		  Case "475" //ERR_BADCHANNELKEY "<channel> :Cannot join channel (+k)"
 		    n = Len(sReply) - ( len(NthField(sReply," ",1)) + Len(NthField(sReply," ",2)) + Len(NthField(sReply," ",3)) + 2 )
 		    msg = Trim(sReply.Right(n))

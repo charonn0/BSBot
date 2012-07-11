@@ -44,6 +44,7 @@ Protected Module Globals
 		  '5     A socket error.
 		  '6     The server did not respond in a timely manner (10 seconds)
 		  '7     Precautionary Quit due to possible memory corruption.
+		  '8     BSBot was kicked AND banned from the channel
 		  
 		  
 		  
@@ -162,10 +163,10 @@ Protected Module Globals
 		Sub Pause(millisecs As Integer)
 		  //Bad! Bad!
 		  #If TargetLinux Then
-		    Soft Declare Function usleep Lib "libc" (seconds As UInt32) as UInt32
-		    Call uSleep(millisecs)
+		    Declare Function usleep Lib "libc" (seconds As UInt32) as UInt32
+		    Call uSleep(millisecs * 1000)  //usleep expects Microseconds
 		  #elseIf TargetWin32 Then
-		    Soft Declare Sub Sleep Lib "Kernel32" (millisecs As Integer)
+		    Declare Sub Sleep Lib "Kernel32" (millisecs As Integer)
 		    Sleep(millisecs)
 		  #endif
 		End Sub
@@ -374,6 +375,11 @@ Protected Module Globals
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ScriptRequest"
+			Group="Behavior"
+			Type="Boolean"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="SSL"
 			Group="Behavior"
 			Type="Boolean"
 		#tag EndViewProperty
