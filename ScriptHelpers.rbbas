@@ -193,8 +193,10 @@ Protected Module ScriptHelpers
 		  //See: Script.Constructor(String, String, BuiltInTrigger)
 		  //
 		  //All script objects are stored in a Dictionary keyed with trigger strings. Thus, it is important
-		  //that the encoding of the trigger be consistent. They should always be in UTF-16. The Script Constructor
-		  //guarentees that the Script.Trigger property is UTF-16.
+		  //that the encoding of the trigger be consistent (dictionaries being encoding-sensitive rather 
+		  //than case-sensitive.) They should always be in UTF-16. The Script Constructor guarentees that 
+		  //the Script.Trigger property is encoded in UTF-16. It does not guarentee that the trigger wasn't 
+		  //mangled by encoding conversion.
 		  //
 		  //You should check for trigger Reassignments and alter your default trigger accordingly. Reassignments are
 		  //also stored in a Dictionary and are guarenteed to be UTF-16.
@@ -205,6 +207,7 @@ Protected Module ScriptHelpers
 		  If Reassignments = Nil Then Reassignments = New Dictionary
 		  If BlackList = Nil Then BlackList = New Dictionary
 		  
+		  //Begin !about trigger
 		  trigger = "!about"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
 		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
@@ -218,7 +221,9 @@ Protected Module ScriptHelpers
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		    scriptHandler.Hidden = False
 		  End If
+		  //End !about trigger
 		  
+		  //Begin !reload trigger
 		  trigger = "!reload"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
 		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
@@ -231,33 +236,39 @@ Protected Module ScriptHelpers
 		    scriptHandler.Description = "Reloads all scripts"
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		  End If
+		  //End !reload trigger
 		  
+		  //Begin !authorize trigger
 		  trigger = "!authorize"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
+		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
 		  If BlackList.HasKey(Trigger) Then
 		    OutPutWarning("Script trigger '" + trigger + "' was blocked by a blacklisting!")
 		    failedCount = failedCount + 1
 		    LoadWarningLevel = 1
 		  Else
-		    If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
 		    scriptHandler = New Script(trigger,"Built-in !authorize handler", AddressOf BuiltIns.Authorize)
 		    scriptHandler.Description = "Promotes the specified user to an Authorized User"
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		  End If
+		  //End !authorize trigger
 		  
+		  //Begin !on trigger
+		  trigger = "!on"
+		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
+		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
 		  If BlackList.HasKey(Trigger) Then
 		    OutPutWarning("Script trigger '" + trigger + "' was blocked by a blacklisting!")
 		    failedCount = failedCount + 1
 		    LoadWarningLevel = 1
 		  Else
-		    trigger = "!on"
-		    trigger = ConvertEncoding(trigger, Encodings.UTF16)
-		    If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
 		    scriptHandler = New Script(trigger,"Built-in !on handler", AddressOf BuiltIns.OnOff)
 		    scriptHandler.Description = "Turns the bot on"
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		  End If
+		  //End !on trigger
 		  
+		  //Begin !on trigger
 		  trigger = "!off"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
 		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
@@ -270,7 +281,9 @@ Protected Module ScriptHelpers
 		    scriptHandler.Description = "Turns the bot off"
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		  End If
+		  //End !off trigger
 		  
+		  //Begin !Deauthorize trigger
 		  trigger = "!deauthorize"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
 		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)
@@ -283,7 +296,9 @@ Protected Module ScriptHelpers
 		    scriptHandler.Description = "Demotes an Authorized User"
 		    Scripts.Value(scriptHandler.Trigger) = scriptHandler
 		  End If
+		  //End !Deauthorize trigger
 		  
+		  //Begin !script trigger
 		  trigger = "!script"
 		  trigger = ConvertEncoding(trigger, Encodings.UTF16)
 		  If Reassignments.HasKey(trigger) Then trigger = Reassignments.Value(trigger)

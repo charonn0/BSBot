@@ -208,7 +208,7 @@ Protected Class ScriptContext
 		    prettyString = "GB"
 		  ElseIf bytes >= 17179999999 Then
 		    prettyDouble = 1.0
-		    prettyString = " shitload(s) of bytes"
+		    prettyString = " shitload of bytes"
 		  Else
 		    prettyDouble = bytes
 		    prettyString = " bytes"
